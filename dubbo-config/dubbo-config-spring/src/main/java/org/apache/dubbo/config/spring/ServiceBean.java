@@ -44,6 +44,12 @@ import java.util.Map;
 /**
  * ServiceFactoryBean
  *
+ *InitializingBean，其声明的接口为afterPropertiesSet方法，顾名思义，就是在bean初始化所有属性之后调用。
+ DisposableBean：其声明的接口为destroy()方法，在Spring BeanFactory销毁一个单例实例之前调用。
+ ApplicationContextAware：其声明的接口为void setApplicationContext(ApplicationContext applicationContext)，实现了该接口，Spring容器在初始化Bean时会调用该方法，注入ApplicationContext，已方便该实例可以直接调用applicationContext获取其他Bean。
+ ApplicationListener：容器重新刷新时执行事件函数。
+ BeanNameAware：其声明的接口为：void setBeanName(String name)，实现该接口的Bean，其实例可以获取该实例在BeanFactory的id或name
+ *
  * @export
  */
 public class ServiceBean<T> extends ServiceConfig<T> implements InitializingBean, DisposableBean, ApplicationContextAware, ApplicationListener<ContextRefreshedEvent>, BeanNameAware {
@@ -124,6 +130,10 @@ public class ServiceBean<T> extends ServiceConfig<T> implements InitializingBean
         return supportedApplicationListener && (delay == null || delay == -1);
     }
 
+    /**
+     * 初始化实例之后调用 -- 猜测 服务的注册
+     * @throws Exception
+     */
     @Override
     @SuppressWarnings({"unchecked", "deprecation"})
     public void afterPropertiesSet() throws Exception {
