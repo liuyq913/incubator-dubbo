@@ -192,6 +192,9 @@ public class ServiceConfig<T> extends AbstractServiceConfig {
         return unexported;
     }
 
+    /**
+     * 暴露服务
+     */
     public synchronized void export() {
         if (provider != null) {
             if (export == null) {
@@ -205,6 +208,9 @@ public class ServiceConfig<T> extends AbstractServiceConfig {
             return;
         }
 
+        /**
+         * 延时注册，就ScheduledExecutorService来延时注册
+         */
         if (delay != null && delay > 0) {
             delayExportExecutor.schedule(new Runnable() {
                 @Override
@@ -217,6 +223,9 @@ public class ServiceConfig<T> extends AbstractServiceConfig {
         }
     }
 
+    /**
+     * 真正的注册服务
+     */
     protected synchronized void doExport() {
         if (unexported) {
             throw new IllegalStateException("Already unexported!");
@@ -228,6 +237,7 @@ public class ServiceConfig<T> extends AbstractServiceConfig {
         if (interfaceName == null || interfaceName.length() == 0) {
             throw new IllegalStateException("<dubbo:service interface=\"\" /> interface not allow null!");
         }
+        //给provider加载默认值   加载顺序 -- 先加载dubbo:provider的属性值，再加载dubbo.provider.file配置文件
         checkDefault();
         if (provider != null) {
             if (application == null) {
