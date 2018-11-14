@@ -499,6 +499,8 @@ public class ServiceConfig<T> extends AbstractServiceConfig {
 
         String host = this.findConfigedHosts(protocolConfig, registryURLs, map);
         Integer port = this.findConfigedPorts(protocolConfig, name, map);
+        //最终服务提供者的url  dubbo://192.168.129.102:20880/org.apache.dubbo.demo.DemoService?anyhost=true&application=demo-provider&bind.ip=192.168.129.102&bind.port=20880&dubbo=2.0.2&generic=false&interface=
+        // org.apache.dubbo.demo.DemoService&methods=sayHello&pid=19840&qos.port=22222&side=provider&timestamp=1542196006775
         URL url = new URL(name, host, port, (contextPath == null || contextPath.length() == 0 ? "" : contextPath + "/") + path, map);
 
         if (ExtensionLoader.getExtensionLoader(ConfiguratorFactory.class)
@@ -555,6 +557,7 @@ public class ServiceConfig<T> extends AbstractServiceConfig {
         this.urls.add(url);
     }
 
+    //本地暴露的转换  ref -(proxyFactory)-> Invoker -(protocol)-> Exporter
     @SuppressWarnings({"unchecked", "rawtypes"})
     private void exportLocal(URL url) {
         if (!Constants.LOCAL_PROTOCOL.equalsIgnoreCase(url.getProtocol())) {

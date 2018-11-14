@@ -576,7 +576,7 @@ public class Constants {
      * When this attribute appears in invocation's attachment, mock invoker will be used
      */
     public static final String INVOCATION_NEED_MOCK = "invocation.need.mock";
-
+   //dubbo隐式协议
     public static final String LOCAL_PROTOCOL = "injvm";
 
     public static final String AUTO_ATTACH_INVOCATIONID_KEY = "invocationid.autoattach";
