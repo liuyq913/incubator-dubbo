@@ -22,7 +22,7 @@
         http://dubbo.apache.org/schema/dubbo http://dubbo.apache.org/schema/dubbo/dubbo.xsd">
 
     <dubbo:application name="annotation-consumer"/>
-    <dubbo:registry address="127.0.0.1:4548"/>
+    <dubbo:registry address="127.0.0.1:2181"/>
     <dubbo:annotation package="org.apache.dubbo.config.spring.annotation.consumer"/>
 
 </beans>

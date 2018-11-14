@@ -25,7 +25,7 @@
     <dubbo:application name="demo-provider"/>
 
     <!-- register center configuration -->
-    <dubbo:registry address="127.0.0.1:4548"/>
+    <dubbo:registry address="127.0.0.1:2181"/>
 
     <!-- protocol configuration -->
     <dubbo:protocol name="dubbo" port="20888"/>

@@ -272,9 +272,13 @@ public class ServiceConfig<T> extends AbstractServiceConfig {
                 monitor = application.getMonitor();
             }
         }
+        //interface是GenericService类型  泛化接口
+        //接口泛化的作用：最最直接的表现就是服务消费者不需要有任何接口的实现，就能完成服务的调用
+        //增加了容错性
         if (ref instanceof GenericService) {
             interfaceClass = GenericService.class;
             if (StringUtils.isEmpty(generic)) {
+                //标记为泛化
                 generic = Boolean.TRUE.toString();
             }
         } else {
@@ -288,6 +292,10 @@ public class ServiceConfig<T> extends AbstractServiceConfig {
             checkRef();
             generic = Boolean.FALSE.toString();
         }
+
+        /**
+         * 本地留存  是本地服务
+         */
         if (local != null) {
             if ("true".equals(local)) {
                 local = interfaceName + "Local";
@@ -302,6 +310,9 @@ public class ServiceConfig<T> extends AbstractServiceConfig {
                 throw new IllegalStateException("The local implementation class " + localClass.getName() + " not implement interface " + interfaceName);
             }
         }
+        /**
+         * stub存根 是远程服务
+         */
         if (stub != null) {
             if ("true".equals(stub)) {
                 stub = interfaceName + "Stub";
@@ -363,7 +374,11 @@ public class ServiceConfig<T> extends AbstractServiceConfig {
 
     @SuppressWarnings({"unchecked", "rawtypes"})
     private void doExportUrls() {
+        //这个入参为true，表示为服务提供者
         List<URL> registryURLs = loadRegistries(true);
+        /**
+         * 遍历所以的注册协议，并把所以注册信息配置，向注册中心注册服务
+         */
         for (ProtocolConfig protocolConfig : protocols) {
             doExportUrlsFor1Protocol(protocolConfig, registryURLs);
         }
@@ -379,6 +394,7 @@ public class ServiceConfig<T> extends AbstractServiceConfig {
         map.put(Constants.SIDE_KEY, Constants.PROVIDER_SIDE);
         map.put(Constants.DUBBO_VERSION_KEY, Version.getProtocolVersion());
         map.put(Constants.TIMESTAMP_KEY, String.valueOf(System.currentTimeMillis()));
+        //进程id
         if (ConfigUtils.getPid() > 0) {
             map.put(Constants.PID_KEY, String.valueOf(ConfigUtils.getPid()));
         }
@@ -387,6 +403,10 @@ public class ServiceConfig<T> extends AbstractServiceConfig {
         appendParameters(map, provider, Constants.DEFAULT_KEY);
         appendParameters(map, protocolConfig);
         appendParameters(map, this);
+        /**
+         * 如果dubbo:service有dubbo:method子标签，则dubbo:method以及其子标签的配置属性，都存入到Map中，属性名称加上对应的方法名作为前缀。
+         * dubbo:method的子标签dubbo:argument,其键为方法名.参数序号。
+         */
         if (methods != null && !methods.isEmpty()) {
             for (MethodConfig method : methods) {
                 appendParameters(map, method, method.getName());
