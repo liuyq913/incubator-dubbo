@@ -517,7 +517,7 @@ public class ServiceConfig<T> extends AbstractServiceConfig {
             if (!Constants.SCOPE_REMOTE.equalsIgnoreCase(scope)) {
                 exportLocal(url);
             }
-            // export to remote if the config is not local (export to local only when config is local)
+            // export to remote if the config is not local (export to local only when config is local)  scope为空的是时候，dubbo即会吧服务注册到远程也会注册到本地
             if (!Constants.SCOPE_LOCAL.equalsIgnoreCase(scope)) {
                 if (logger.isInfoEnabled()) {
                     logger.info("Export dubbo service " + interfaceClass.getName() + " to url " + url);
@@ -560,7 +560,11 @@ public class ServiceConfig<T> extends AbstractServiceConfig {
     //本地暴露的转换  ref -(proxyFactory)-> Invoker -(protocol)-> Exporter
     @SuppressWarnings({"unchecked", "rawtypes"})
     private void exportLocal(URL url) {
+        //url 的fullString
+        //dubbo://192.168.129.102:20880/org.apache.dubbo.demo.DemoService?anyhost=true&application=demo-provider&bind.ip=192.168.129.102&bind.port=20880&dubbo=2.0.2&generic=false&interface=org.apache.dubbo.demo.DemoService&methods=sayHello&pid=12632&qos.port=22222&side=provider&timestamp=1542699037536
+        //本地暴露服务默认是injvm（dubbo隐式协议）
         if (!Constants.LOCAL_PROTOCOL.equalsIgnoreCase(url.getProtocol())) {
+            //injvm://127.0.0.1/org.apache.dubbo.demo.DemoService?anyhost=true&application=demo-provider&bind.ip=192.168.129.102&bind.port=20880&dubbo=2.0.2&generic=false&interface=org.apache.dubbo.demo.DemoService&methods=sayHello&pid=12632&qos.port=22222&side=provider&timestamp=1542699037536
             URL local = URL.valueOf(url.toFullString())
                     .setProtocol(Constants.LOCAL_PROTOCOL)
                     .setHost(LOCALHOST)
