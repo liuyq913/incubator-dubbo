@@ -126,6 +126,7 @@ public abstract class AbstractServer extends AbstractEndpoint implements Server 
         } catch (Throwable t) {
             logger.error(t.getMessage(), t);
         }
+        //重新设置URL
         super.setUrl(getUrl().addParameters(url.getParameters()));
     }
 

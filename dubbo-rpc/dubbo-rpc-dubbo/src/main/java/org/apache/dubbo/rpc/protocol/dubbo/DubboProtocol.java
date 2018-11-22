@@ -274,8 +274,8 @@ public class DubboProtocol extends AbstractProtocol {
         String key = url.getAddress();
         //client can export a service which's only for server to invoke
         boolean isServer = url.getParameter(Constants.IS_SERVER_KEY, true);
-        if (isServer) {
-            ExchangeServer server = serverMap.get(key);
+        if (isServer) {                                  //key 就是ip+端口  多个服务都是公共一样ip和端口
+            ExchangeServer server = serverMap.get(key); //多个<dubbosevice/>的key是同一个的，所以netty的服务只会开一次
             if (server == null) {
                 synchronized (this) {
                     server = serverMap.get(key);
