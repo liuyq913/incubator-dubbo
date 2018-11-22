@@ -52,7 +52,7 @@ public class Transporters {
             handler = handlers[0];
         } else {
             handler = new ChannelHandlerDispatcher(handlers);
-        }
+        } //默认返回nettyTransport  然后调用nettyTransport的bind方法，返回NettyService实例，NettyService的构造方法就会调用doOpen()将服务暴露出去
         return getTransporter().bind(url, handler);
     }
 

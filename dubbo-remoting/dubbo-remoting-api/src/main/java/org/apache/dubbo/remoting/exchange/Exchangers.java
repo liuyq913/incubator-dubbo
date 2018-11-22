@@ -27,7 +27,7 @@ import org.apache.dubbo.remoting.exchange.support.Replier;
 import org.apache.dubbo.remoting.transport.ChannelHandlerAdapter;
 
 /**
- * Exchanger facade. (API, Static, ThreadSafe)
+ * Exchanger facade. (API, Static, ThreadSafe)  该类主要有两种作用：（1）服务器的绑定bind （2）客户端的连接功能connect
  */
 public class Exchangers {
 
@@ -67,6 +67,7 @@ public class Exchangers {
             throw new IllegalArgumentException("handler == null");
         }
         url = url.addParameterIfAbsent(Constants.CODEC_KEY, "exchange");
+        //getExchanger(url) 默认返回HeadrExchanger
         return getExchanger(url).bind(url, handler);
     }
 

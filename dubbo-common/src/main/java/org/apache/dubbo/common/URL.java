@@ -66,7 +66,7 @@ import java.util.concurrent.ConcurrentHashMap;
  * </ul>
  *
  * @see java.net.URL
- * @see java.net.URI
+ * @see java.net.URI  dubbo各个模块的通讯都是通过URL来实现的
  */
 public /**final**/ class URL implements Serializable {
 

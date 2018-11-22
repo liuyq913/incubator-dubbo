@@ -64,9 +64,16 @@ public class NettyServer extends AbstractServer implements Server {
     @Override
     protected void doOpen() throws Throwable {
         NettyHelper.setNettyLoggerFactory();
+        //启动一个netty服务对象
         ExecutorService boss = Executors.newCachedThreadPool(new NamedThreadFactory("NettyServerBoss", true));
         ExecutorService worker = Executors.newCachedThreadPool(new NamedThreadFactory("NettyServerWorker", true));
         ChannelFactory channelFactory = new NioServerSocketChannelFactory(boss, worker, getUrl().getPositiveParameter(Constants.IO_THREADS_KEY, Constants.DEFAULT_IO_THREADS));
+        /**
+         * ServerBootstrap监听的一个端口对应一个boss线程，它们一一对应。比如你需要netty监听80和443端口，
+         * 那么就会有两个boss线程分别负责处理来自两个端口的socket请求。在boss线程接收了socket连接请求后，
+         * 会产生一个channel（一个打开的socket对应一个打开的channel），
+         * 并把这个channel交给ServerBootstrap初始化时指定的ServerSocketChannelFactory来处理，boss线程则继续处理socket的请求。
+         */
         bootstrap = new ServerBootstrap(channelFactory);
 
         final NettyHandler nettyHandler = new NettyHandler(getUrl(), this);
@@ -86,12 +93,12 @@ public class NettyServer extends AbstractServer implements Server {
                 }*/
                 pipeline.addLast("decoder", adapter.getDecoder());
                 pipeline.addLast("encoder", adapter.getEncoder());
-                pipeline.addLast("handler", nettyHandler);
+                pipeline.addLast("handler", nettyHandler);   //设置服务端接受到客户端请求之后的处理器
                 return pipeline;
             }
         });
         // bind
-        channel = bootstrap.bind(getBindAddress());
+        channel = bootstrap.bind(getBindAddress()); //调用bind等待客户端来连接
     }
 
     @Override
