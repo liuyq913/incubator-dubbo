@@ -170,9 +170,9 @@ public class ReferenceBean<T> extends ReferenceConfig<T> implements FactoryBean,
         if (b == null && getConsumer() != null) {
             b = getConsumer().isInit();
         }
-        if (b != null && b) {
+       // if (b != null && b) {
             getObject();
-        }
+       // }
     }
 
     @Override
