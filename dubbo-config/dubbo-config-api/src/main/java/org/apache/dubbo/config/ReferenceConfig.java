@@ -209,7 +209,7 @@ public class ReferenceConfig<T> extends AbstractReferenceConfig {
             }
             checkInterfaceAndMethods(interfaceClass, methods);
         }
-        String resolve = System.getProperty(interfaceName);
+        String resolve = System.getProperty(interfaceName); //获取系统中获取直连该服务的直连提供者(不为空则会绕过注册中心)
         String resolveFile = null;
         if (resolve == null || resolve.length() == 0) {
             resolveFile = System.getProperty("dubbo.resolve.file");
@@ -279,7 +279,7 @@ public class ReferenceConfig<T> extends AbstractReferenceConfig {
         }
         checkApplication();
         checkStubAndMock(interfaceClass);
-        Map<String, String> map = new HashMap<String, String>();
+        Map<String, String> map = new HashMap<String, String>(); //开始构建消费者的URL
         resolveAsyncInterface(interfaceClass, map);
         Map<Object, Object> attributes = new HashMap<Object, Object>();
         map.put(Constants.SIDE_KEY, Constants.CONSUMER_SIDE);
@@ -333,13 +333,16 @@ public class ReferenceConfig<T> extends AbstractReferenceConfig {
 
         //attributes are stored by system context.
         StaticContext.getSystemContext().putAll(attributes);
-        ref = createProxy(map);
+        ref = createProxy(map); //创建消费者代理
         ConsumerModel consumerModel = new ConsumerModel(getUniqueServiceName(), this, ref, interfaceClass.getMethods());
         ApplicationModel.initConsumerModel(getUniqueServiceName(), consumerModel);
     }
 
     @SuppressWarnings({"unchecked", "rawtypes", "deprecation"})
     private T createProxy(Map<String, String> map) {
+        //temp://localhost?application=demo-consumer&check=false&dubbo=2.0.2
+        // &interface=org.apache.dubbo.demo.DemoService&methods=sayHello&pid=7248&
+        // qos.port=33333&register.ip=192.168.129.102&side=consumer&timestamp=1542939797963
         URL tmpUrl = new URL("temp", "localhost", 0, map);
         final boolean isJvmRefer;
         if (isInjvm() == null) {
@@ -376,13 +379,13 @@ public class ReferenceConfig<T> extends AbstractReferenceConfig {
                     }
                 }
             } else { // assemble URL from register center's configuration
-                List<URL> us = loadRegistries(false);
+                List<URL> us = loadRegistries(false); //获取注册中心信息
                 if (us != null && !us.isEmpty()) {
                     for (URL u : us) {
                         URL monitorUrl = loadMonitor(u);
                         if (monitorUrl != null) {
                             map.put(Constants.MONITOR_KEY, URL.encode(monitorUrl.toFullString()));
-                        }
+                        }//
                         urls.add(u.addParameterAndEncoded(Constants.REFER_KEY, StringUtils.toQueryString(map)));
                     }
                 }
@@ -392,9 +395,9 @@ public class ReferenceConfig<T> extends AbstractReferenceConfig {
             }
 
             if (urls.size() == 1) {
-                invoker = refprotocol.refer(interfaceClass, urls.get(0));
+                invoker = refprotocol.refer(interfaceClass, urls.get(0)); //远程调用服务 返回服务的本地代理  interfaceClass -- >invoker
             } else {
-                List<Invoker<?>> invokers = new ArrayList<Invoker<?>>();
+                List<Invoker<?>> invokers = new ArrayList<Invoker<?>>();  //多个服务提供 则集群模式
                 URL registryURL = null;
                 for (URL url : urls) {
                     invokers.add(refprotocol.refer(interfaceClass, url));
@@ -412,7 +415,7 @@ public class ReferenceConfig<T> extends AbstractReferenceConfig {
             }
         }
 
-        Boolean c = check;
+        Boolean c = check;   //<dubbo:referecnce check = true/> 则需要判断服务提供者是否存在
         if (c == null && consumer != null) {
             c = consumer.isCheck();
         }
@@ -428,7 +431,7 @@ public class ReferenceConfig<T> extends AbstractReferenceConfig {
             logger.info("Refer dubbo service " + interfaceClass.getName() + " from url " + invoker.getUrl());
         }
         // create service proxy
-        return (T) proxyFactory.getProxy(invoker);
+        return (T) proxyFactory.getProxy(invoker); //根据invoker获取代理类
     }
 
     private void checkDefault() {

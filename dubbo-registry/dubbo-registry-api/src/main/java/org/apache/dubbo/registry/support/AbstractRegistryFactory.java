@@ -79,7 +79,7 @@ public abstract class AbstractRegistryFactory implements RegistryFactory {
             LOCK.unlock();
         }
     }
-
+    //从注册中心订阅服务
     @Override
     public Registry getRegistry(URL url) {
         url = url.setPath(RegistryService.class.getName())
@@ -89,7 +89,7 @@ public abstract class AbstractRegistryFactory implements RegistryFactory {
         // Lock the registry access process to ensure a single instance of the registry
         LOCK.lock();
         try {
-            Registry registry = REGISTRIES.get(key);
+            Registry registry = REGISTRIES.get(key); //获取注册中心的事例 有就直接返回
             if (registry != null) {
                 return registry;
             }
