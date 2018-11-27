@@ -27,7 +27,7 @@ import java.util.List;
  * Directory. (SPI, Prototype, ThreadSafe)
  * <p>
  * <a href="http://en.wikipedia.org/wiki/Directory_service">Directory Service</a>
- *
+ *  多个invoker的集合
  * @see org.apache.dubbo.rpc.cluster.Cluster#join(Directory)
  */
 public interface Directory<T> extends Node {

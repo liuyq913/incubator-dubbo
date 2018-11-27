@@ -27,7 +27,7 @@ import org.apache.dubbo.rpc.cluster.Directory;
  */
 public class FailoverCluster implements Cluster {
 
-    public final static String NAME = "failover";
+    public final static String NAME = "failover"; //默认容错模式 重试2次
 
     @Override
     public <T> Invoker<T> join(Directory<T> directory) throws RpcException {

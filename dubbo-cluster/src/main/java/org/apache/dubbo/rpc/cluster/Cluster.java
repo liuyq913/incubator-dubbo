@@ -27,7 +27,8 @@ import org.apache.dubbo.rpc.cluster.support.FailoverCluster;
  * <p>
  * <a href="http://en.wikipedia.org/wiki/Computer_cluster">Cluster</a>
  * <a href="http://en.wikipedia.org/wiki/Fault-tolerant_system">Fault-Tolerant</a>
- *
+ *  将多个invoker 也就是direcotry  对外伪装成一个单一的invoker ，伪装的的过程包含了容错逻辑，一个调用失败了
+ *  会调用另外一个
  */
 @SPI(FailoverCluster.NAME)
 public interface Cluster {
