@@ -185,9 +185,9 @@ public class ReferenceConfig<T> extends AbstractReferenceConfig {
     }
 
     private void init() {
-        /*if (initialized) {
+        if (initialized) {
             return;
-        }*/
+        }
         initialized = true;
         if (interfaceName == null || interfaceName.length() == 0) {
             throw new IllegalStateException("<dubbo:reference interface=\"\" /> interface not allow null!");
