@@ -142,20 +142,27 @@ public abstract class AbstractClusterInvoker<T> implements Invoker<T> {
             return null;
         if (invokers.size() == 1)
             return invokers.get(0);
+        //
+        if(invokers.size() == 2 && selected != null && selected.size()>0){
+            return selected.get(0) == invokers.get(0) ? invokers.get(1):invokers.get(0);
+        }
         Invoker<T> invoker = loadbalance.select(invokers, getUrl(), invocation);
 
         //If the `invoker` is in the  `selected` or invoker is unavailable && availablecheck is true, reselect.
+        //选出来的不可用，或者再已经使用的里面则重新选择
         if ((selected != null && selected.contains(invoker))
                 || (!invoker.isAvailable() && getUrl() != null && availablecheck)) {
             try {
+                //重新选择
                 Invoker<T> rinvoker = reselect(loadbalance, invocation, invokers, selected, availablecheck);
                 if (rinvoker != null) {
                     invoker = rinvoker;
                 } else {
                     //Check the index of current selected invoker, if it's not the last one, choose the one at index+1.
+                    //看看当前选定的索引是不是最后一个，不是最后一个就选下一个，否则选第一个
                     int index = invokers.indexOf(invoker);
                     try {
-                        //Avoid collision
+                        //Avoid collision   避免碰撞
                         invoker = index < invokers.size() - 1 ? invokers.get(index + 1) : invokers.get(0);
                     } catch (Exception e) {
                         logger.warn(e.getMessage() + " may because invokers list dynamic change, ignore.", e);

@@ -408,7 +408,7 @@ public class ReferenceConfig<T> extends AbstractReferenceConfig {
                 if (registryURL != null) { // registry url is available
                     // use AvailableCluster only when register's cluster is available
                     URL u = registryURL.addParameter(Constants.CLUSTER_KEY, AvailableCluster.NAME);
-                    invoker = cluster.join(new StaticDirectory(u, invokers));
+                    invoker = cluster.join(new StaticDirectory(u, invokers)); //集群模式，将多个invoker伪装成一个
                 } else { // not a registry url
                     invoker = cluster.join(new StaticDirectory(invokers));
                 }
