@@ -142,7 +142,7 @@ public abstract class AbstractClusterInvoker<T> implements Invoker<T> {
             return null;
         if (invokers.size() == 1)
             return invokers.get(0);
-        //
+
         if(invokers.size() == 2 && selected != null && selected.size()>0){
             return selected.get(0) == invokers.get(0) ? invokers.get(1):invokers.get(0);
         }
