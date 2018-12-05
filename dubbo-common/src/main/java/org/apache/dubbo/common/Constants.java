@@ -36,7 +36,7 @@ public class Constants {
 
     public static final String UNSUBSCRIBE = "unsubscribe";
 
-    public static final String CATEGORY_KEY = "category";
+    public static final String CATEGORY_KEY = "category"; //注册中心的命名空间
 
     public static final String PROVIDERS_CATEGORY = "providers";
 

@@ -40,9 +40,9 @@ public interface Directory<T> extends Node {
     Class<T> getInterface();
 
     /**
-     * list invokers.
+     * list invokers.  获取该服务接口类别
      *
-     * @return invokers
+     * @return invokers  根据调用上下文获取当前所有该服务的服务提供者。
      */
     List<Invoker<T>> list(Invocation invocation) throws RpcException;
 

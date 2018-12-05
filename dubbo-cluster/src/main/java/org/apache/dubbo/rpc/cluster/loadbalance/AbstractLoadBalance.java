@@ -30,6 +30,7 @@ import java.util.List;
  */
 public abstract class AbstractLoadBalance implements LoadBalance {
 
+    //权重计算公式
     static int calculateWarmupWeight(int uptime, int warmup, int weight) {
         int ww = (int) ((float) uptime / ((float) warmup / (float) weight));
         return ww < 1 ? 1 : (ww > weight ? weight : ww);
@@ -53,9 +54,9 @@ public abstract class AbstractLoadBalance implements LoadBalance {
         if (weight > 0) {
             long timestamp = invoker.getUrl().getParameter(Constants.REMOTE_TIMESTAMP_KEY, 0L);
             if (timestamp > 0L) {
-                int uptime = (int) (System.currentTimeMillis() - timestamp);
+                int uptime = (int) (System.currentTimeMillis() - timestamp); //当前时间 - 服务启动时候的时间 = 服务已经启动了多久
                 int warmup = invoker.getUrl().getParameter(Constants.WARMUP_KEY, Constants.DEFAULT_WARMUP);
-                if (uptime > 0 && uptime < warmup) {
+                if (uptime > 0 && uptime < warmup) { // ，如果uptime 小于 warmup,说明还在预热阶段，需要相应的减少权重
                     weight = calculateWarmupWeight(uptime, warmup, weight);
                 }
             }

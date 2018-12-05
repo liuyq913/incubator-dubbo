@@ -59,7 +59,7 @@ import java.util.Set;
 public class RegistryDirectory<T> extends AbstractDirectory<T> implements NotifyListener {
 
     private static final Logger logger = LoggerFactory.getLogger(RegistryDirectory.class);
-
+    //默认failover
     private static final Cluster cluster = ExtensionLoader.getExtensionLoader(Cluster.class).getAdaptiveExtension();
 
     private static final RouterFactory routerFactory = ExtensionLoader.getExtensionLoader(RouterFactory.class).getAdaptiveExtension();
@@ -91,10 +91,10 @@ public class RegistryDirectory<T> extends AbstractDirectory<T> implements Notify
     // Map<methodName, Invoker> cache service method to invokers mapping.
     private volatile Map<String, List<Invoker<T>>> methodInvokerMap; // The initial value is null and the midway may be assigned to null, please use the local variable reference
 
-    // Set<invokerUrls> cache invokeUrls to invokers mapping.
+    // Set<invokerUrls> cache invokeUrls to invokers mapping. 当前缓存的所有URL提供者URL
     private volatile Set<URL> cachedInvokerUrls; // The initial value is null and the midway may be assigned to null, please use the local variable reference
 
-    public RegistryDirectory(Class<T> serviceType, URL url) {
+    public RegistryDirectory(Class<T> serviceType, URL url) { //url 注册中心的url
         super(url);
         if (serviceType == null) {
             throw new IllegalArgumentException("service type is null.");
@@ -104,7 +104,7 @@ public class RegistryDirectory<T> extends AbstractDirectory<T> implements Notify
         }
         this.serviceType = serviceType;
         this.serviceKey = url.getServiceKey();
-        this.queryMap = StringUtils.parseQueryString(url.getParameterAndDecoded(Constants.REFER_KEY));
+        this.queryMap = StringUtils.parseQueryString(url.getParameterAndDecoded(Constants.REFER_KEY)); //服务消费者参数
         this.overrideDirectoryUrl = this.directoryUrl = url.setPath(url.getServiceInterface()).clearParameters().addParameters(queryMap).removeParameter(Constants.MONITOR_KEY);
         String group = directoryUrl.getParameter(Constants.GROUP_KEY, "");
         this.multiGroup = group != null && ("*".equals(group) || group.contains(","));
@@ -154,10 +154,11 @@ public class RegistryDirectory<T> extends AbstractDirectory<T> implements Notify
     public void setRegistry(Registry registry) {
         this.registry = registry;
     }
-
+    //服务订阅
     public void subscribe(URL url) {
         setConsumerUrl(url);
-        registry.subscribe(url, this);
+        registry.subscribe(url, this); //这里的category 有 providers consumers routers 则会在那三个目录下创建监听，当节点更新
+        // 删除  新增都会 RegistryDirectory#void notify(List< URL> urls）
     }
 
     @Override
@@ -185,7 +186,7 @@ public class RegistryDirectory<T> extends AbstractDirectory<T> implements Notify
     public synchronized void notify(List<URL> urls) {
         List<URL> invokerUrls = new ArrayList<URL>();
         List<URL> routerUrls = new ArrayList<URL>();
-        List<URL> configuratorUrls = new ArrayList<URL>();
+        List<URL> configuratorUrls = new ArrayList<URL>(); //配置url
         for (URL url : urls) {
             String protocol = url.getProtocol();
             String category = url.getParameter(Constants.CATEGORY_KEY, Constants.DEFAULT_CATEGORY);
@@ -235,10 +236,10 @@ public class RegistryDirectory<T> extends AbstractDirectory<T> implements Notify
     // TODO: 2017/8/31 FIXME The thread pool should be used to refresh the address, otherwise the task may be accumulated.
     private void refreshInvoker(List<URL> invokerUrls) {
         if (invokerUrls != null && invokerUrls.size() == 1 && invokerUrls.get(0) != null
-                && Constants.EMPTY_PROTOCOL.equals(invokerUrls.get(0).getProtocol())) {
+                && Constants.EMPTY_PROTOCOL.equals(invokerUrls.get(0).getProtocol())) { //如果服务提供者只有1个而且，协议是empty 则清空所有的服务
             this.forbidden = true; // Forbid to access
             this.methodInvokerMap = null; // Set the method invoker map to null
-            destroyAllInvokers(); // Close all invokers
+            destroyAllInvokers(); // Close all invokers 销毁所有的服务提供者
         } else {
             this.forbidden = false; // Allow to access
             Map<String, Invoker<T>> oldUrlInvokerMap = this.urlInvokerMap; // local reference
