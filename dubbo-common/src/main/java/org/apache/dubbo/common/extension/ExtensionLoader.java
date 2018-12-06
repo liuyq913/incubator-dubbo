@@ -521,18 +521,33 @@ public class ExtensionLoader<T> {
         }
     }
 
+
+    //拓展点注入
+    //给setXXX方法注入拓展点的实现类   根据set方法的属性名和和参数类型 Class 生成拓展点的实现类
     private T injectExtension(T instance) {
         try {
             if (objectFactory != null) {
+                ////遍历扩展实现类实例的方法
                 for (Method method : instance.getClass().getMethods()) {
+                    //set开头，只有一个参数，public
                     if (method.getName().startsWith("set")
                             && method.getParameterTypes().length == 1
                             && Modifier.isPublic(method.getModifiers())) {
+                        //set方法参数类型
                         Class<?> pt = method.getParameterTypes()[0];
                         try {
+                            //set方法的属性
                             String property = method.getName().length() > 3 ? method.getName().substring(3, 4).toLowerCase() + method.getName().substring(4) : "";
+                            //根据类型和名称信息从ExtensionFactory中获取
+                            //比如在某个扩展实现类中会有setProtocol(Protocol protocol)这样的set方法
+                            //这里pt就是Protocol，property就是protocol
+                            //AdaptiveExtensionFactory就会根据这两个参数去查找对应的扩展实现类
+                            //这里就会返回Protocol$Adaptive
                             Object object = objectFactory.getExtension(pt, property);
                             if (object != null) {
+                                //说明set方法的参数是扩展点类型，进行注入
+                                //为set方法注入一个自适应的实现类
+                                //相当于setProtocol(DubboProtocol protocol)
                                 method.invoke(instance, object);
                             }
                         } catch (Exception e) {
