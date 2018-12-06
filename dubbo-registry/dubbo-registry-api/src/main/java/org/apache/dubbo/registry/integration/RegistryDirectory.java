@@ -181,7 +181,7 @@ public class RegistryDirectory<T> extends AbstractDirectory<T> implements Notify
             logger.warn("Failed to destroy service " + serviceKey, t);
         }
     }
-
+   //注册中心节点变化后，刷新服务提供者
     @Override
     public synchronized void notify(List<URL> urls) {
         List<URL> invokerUrls = new ArrayList<URL>();
@@ -214,14 +214,14 @@ public class RegistryDirectory<T> extends AbstractDirectory<T> implements Notify
             }
         }
         List<Configurator> localConfigurators = this.configurators; // local reference
-        // merge override parameters
+        // merge override parameters  注册中心地址
         this.overrideDirectoryUrl = directoryUrl;
         if (localConfigurators != null && !localConfigurators.isEmpty()) {
             for (Configurator configurator : localConfigurators) {
                 this.overrideDirectoryUrl = configurator.configure(overrideDirectoryUrl);
             }
         }
-        // providers
+        // providers 刷新服务
         refreshInvoker(invokerUrls);
     }
 
@@ -263,7 +263,7 @@ public class RegistryDirectory<T> extends AbstractDirectory<T> implements Notify
             this.methodInvokerMap = multiGroup ? toMergeMethodInvokerMap(newMethodInvokerMap) : newMethodInvokerMap;
             this.urlInvokerMap = newUrlInvokerMap;
             try {
-                destroyUnusedInvokers(oldUrlInvokerMap, newUrlInvokerMap); // Close the unused Invoker
+                destroyUnusedInvokers(oldUrlInvokerMap, newUrlInvokerMap); // Close the unused Invoker 删除老的invokerMap里面不需要的部分
             } catch (Exception e) {
                 logger.warn("destroyUnusedInvokers error. ", e);
             }
@@ -367,7 +367,7 @@ public class RegistryDirectory<T> extends AbstractDirectory<T> implements Notify
                 logger.error(new IllegalStateException("Unsupported protocol " + providerUrl.getProtocol() + " in notified url: " + providerUrl + " from registry " + getUrl().getAddress() + " to consumer " + NetUtils.getLocalHost()
                         + ", supported protocol: " + ExtensionLoader.getExtensionLoader(Protocol.class).getSupportedExtensions()));
                 continue;
-            }
+            } //配置属性消费者端优先生产者端属性
             URL url = mergeUrl(providerUrl);
 
             String key = url.toFullString(); // The parameter urls are sorted
@@ -410,7 +410,7 @@ public class RegistryDirectory<T> extends AbstractDirectory<T> implements Notify
      * @return
      */
     private URL mergeUrl(URL providerUrl) {
-        providerUrl = ClusterUtils.mergeUrl(providerUrl, queryMap); // Merge the consumer side parameters
+        providerUrl = ClusterUtils.mergeUrl(providerUrl, queryMap); // 用消费端配置属性覆盖服务端属性  Merge the consumer side parameters
 
         List<Configurator> localConfigurators = this.configurators; // local reference
         if (localConfigurators != null && !localConfigurators.isEmpty()) {

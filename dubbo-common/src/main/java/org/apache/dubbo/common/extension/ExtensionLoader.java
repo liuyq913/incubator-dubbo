@@ -81,12 +81,12 @@ public class ExtensionLoader<T> {
 
     private final ConcurrentMap<Class<?>, String> cachedNames = new ConcurrentHashMap<Class<?>, String>();
 
-    private final Holder<Map<String, Class<?>>> cachedClasses = new Holder<Map<String, Class<?>>>();
+    private final Holder<Map<String, Class<?>>> cachedClasses = new Holder<Map<String, Class<?>>>(); //拓展点class缓存spring=org.apache.dubbo.config.spring.status.SpringStatusChecker     则spring为key， SpringStatusChecker的class为值
 
     private final Map<String, Object> cachedActivates = new ConcurrentHashMap<String, Object>();
     private final ConcurrentMap<String, Holder<Object>> cachedInstances = new ConcurrentHashMap<String, Holder<Object>>();
-    private final Holder<Object> cachedAdaptiveInstance = new Holder<Object>();
-    private volatile Class<?> cachedAdaptiveClass = null;
+    private final Holder<Object> cachedAdaptiveInstance = new Holder<Object>(); //本地缓存的拓展点
+    private volatile Class<?> cachedAdaptiveClass = null;  //缓存 著有@Adaptive标志的拓展点的具体实现的class
     private String cachedDefaultName;
     private volatile Throwable createAdaptiveInstanceError;
 
@@ -454,7 +454,7 @@ public class ExtensionLoader<T> {
                     instance = cachedAdaptiveInstance.get();
                     if (instance == null) {
                         try {
-                            instance = createAdaptiveExtension();
+                            instance = createAdaptiveExtension(); //第一次获取
                             cachedAdaptiveInstance.set(instance);
                         } catch (Throwable t) {
                             createAdaptiveInstanceError = t;
@@ -507,7 +507,8 @@ public class ExtensionLoader<T> {
                 EXTENSION_INSTANCES.putIfAbsent(clazz, clazz.newInstance());
                 instance = (T) EXTENSION_INSTANCES.get(clazz);
             }
-            injectExtension(instance);
+            //dubbo的IOC反转控制，就是从spi和spring里面提取对象赋值。
+            injectExtension(instance); //拓展点自适应
             Set<Class<?>> wrapperClasses = cachedWrapperClasses;
             if (wrapperClasses != null && !wrapperClasses.isEmpty()) {
                 for (Class<?> wrapperClass : wrapperClasses) {
@@ -561,7 +562,7 @@ public class ExtensionLoader<T> {
 
     private Map<String, Class<?>> getExtensionClasses() {
         Map<String, Class<?>> classes = cachedClasses.get();
-        if (classes == null) {
+        if (classes == null) { //双重保证
             synchronized (cachedClasses) {
                 classes = cachedClasses.get();
                 if (classes == null) {
@@ -573,7 +574,7 @@ public class ExtensionLoader<T> {
         return classes;
     }
 
-    // synchronized in getExtensionClasses
+    // synchronized in getExtensionClasses  获取到获取type类型 所有拓展点
     private Map<String, Class<?>> loadExtensionClasses() {
         final SPI defaultAnnotation = type.getAnnotation(SPI.class);
         if (defaultAnnotation != null) {
@@ -602,7 +603,7 @@ public class ExtensionLoader<T> {
         String fileName = dir + type;
         try {
             Enumeration<java.net.URL> urls;
-            ClassLoader classLoader = findClassLoader();
+            ClassLoader classLoader = findClassLoader(); //当前线程类加载器   Thread.currentThread().getContextClassLoader()
             if (classLoader != null) {
                 urls = classLoader.getResources(fileName);
             } else {
@@ -743,17 +744,24 @@ public class ExtensionLoader<T> {
     }
 
     private Class<?> getAdaptiveExtensionClass() {
-        getExtensionClasses();
+        getExtensionClasses(); //获取了该拓展点下的所有Class
         if (cachedAdaptiveClass != null) {
             return cachedAdaptiveClass;
         }
         return cachedAdaptiveClass = createAdaptiveExtensionClass();
     }
 
+    /**
+     * 自动生成和编译一个动态代理适配器类
+     * @return
+     */
     private Class<?> createAdaptiveExtensionClass() {
+        //生成字节码文件
         String code = createAdaptiveExtensionClassCode();
+        //类加载器
         ClassLoader classLoader = findClassLoader();
         org.apache.dubbo.common.compiler.Compiler compiler = ExtensionLoader.getExtensionLoader(org.apache.dubbo.common.compiler.Compiler.class).getAdaptiveExtension();
+        //动态编译
         return compiler.compile(code, classLoader);
     }
 

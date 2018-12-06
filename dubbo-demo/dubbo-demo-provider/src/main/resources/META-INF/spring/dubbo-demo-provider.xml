@@ -27,15 +27,15 @@
     <!-- use multicast registry center to export service
     <dubbo:registry address="multicast://224.5.6.7:1234"/>-->
 
-    <dubbo:registry address="127.0.0.1:2181,192.168.100.187:2181" protocol="zookeeper"/>
+    <dubbo:registry address="127.0.0.1:2181" protocol="zookeeper"/>
 
     <!-- use dubbo protocol to export service on port 20880-->
     <dubbo:protocol name="dubbo" port="20880"/>
     <!-- service implementation, as same as regular local bean -->
     <bean id="demoService" class="org.apache.dubbo.demo.provider.DemoServiceImpl"/>
-    <bean id="demoService2" class="org.apache.dubbo.demo.provider.DemoServiceImpl2"/>
+   <!-- <bean id="demoService2" class="org.apache.dubbo.demo.provider.DemoServiceImpl2"/>-->
 
     <!-- declare the service interface to be exported -->
     <dubbo:service interface="org.apache.dubbo.demo.DemoService" ref="demoService"/>
-    <dubbo:service interface="org.apache.dubbo.demo.DemoService2" ref="demoService2"/>
+    <!--<dubbo:service interface="org.apache.dubbo.demo.DemoService2" ref="demoService2"/>-->
 </beans>

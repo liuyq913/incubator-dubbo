@@ -16,7 +16,6 @@
  */
 package org.apache.dubbo.config.spring.extension;
 
-import java.util.Set;
 import org.apache.dubbo.common.extension.ExtensionFactory;
 import org.apache.dubbo.common.extension.SPI;
 import org.apache.dubbo.common.logger.Logger;
@@ -25,6 +24,8 @@ import org.apache.dubbo.common.utils.ConcurrentHashSet;
 import org.springframework.beans.factory.NoSuchBeanDefinitionException;
 import org.springframework.beans.factory.NoUniqueBeanDefinitionException;
 import org.springframework.context.ApplicationContext;
+
+import java.util.Set;
 
 /**
  * SpringExtensionFactory
