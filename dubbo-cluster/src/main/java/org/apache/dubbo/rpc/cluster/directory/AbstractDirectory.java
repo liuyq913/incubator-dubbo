@@ -77,7 +77,9 @@ public abstract class AbstractDirectory<T> implements Directory<T> {
         if (localRouters != null && !localRouters.isEmpty()) {
             for (Router router : localRouters) {
                 try {
+                    //runtime 这个参数是在指是否在每次调用服务之前都要执行路由规则，runtime = true 则每次调用都需要执行路由规则
                     if (router.getUrl() == null || router.getUrl().getParameter(Constants.RUNTIME_KEY, false)) {
+                        //服务路由
                         invokers = router.route(invokers, getConsumerUrl(), invocation);
                     }
                 } catch (Throwable t) {
