@@ -79,23 +79,27 @@ public class ExtensionLoader<T> {
 
     private final ExtensionFactory objectFactory;
 
-    private final ConcurrentMap<Class<?>, String> cachedNames = new ConcurrentHashMap<Class<?>, String>();
+    private final ConcurrentMap<Class<?>, String> cachedNames = new ConcurrentHashMap<Class<?>, String>(); // 扩展点实现类对应的名称(如配置多个名称则值为第一个)
 
     private final Holder<Map<String, Class<?>>> cachedClasses = new Holder<Map<String, Class<?>>>(); //拓展点class缓存spring=org.apache.dubbo.config.spring.status.SpringStatusChecker     则spring为key， SpringStatusChecker的class为值
 
-    private final Map<String, Object> cachedActivates = new ConcurrentHashMap<String, Object>();
+    private final Map<String, Object> cachedActivates = new ConcurrentHashMap<String, Object>();  // 当前Extension实现自动激活实现缓存(map,无序)
     private final ConcurrentMap<String, Holder<Object>> cachedInstances = new ConcurrentHashMap<String, Holder<Object>>();
     private final Holder<Object> cachedAdaptiveInstance = new Holder<Object>(); //本地缓存的拓展点
-    private volatile Class<?> cachedAdaptiveClass = null;  //缓存 著有@Adaptive标志的拓展点的具体实现的class
+    private volatile Class<?> cachedAdaptiveClass = null;  //缓存 著有@Adaptive标志的拓展点的具体实现的class  当前Extension类型对应的AdaptiveExtension类型(只能一个)
     private String cachedDefaultName;
     private volatile Throwable createAdaptiveInstanceError;
 
-    private Set<Class<?>> cachedWrapperClasses;
+    private Set<Class<?>> cachedWrapperClasses;  //当前Extension类型对应的所有Wrapper实现类型(无顺序)
 
     private Map<String, IllegalStateException> exceptions = new ConcurrentHashMap<String, IllegalStateException>();
 
     private ExtensionLoader(Class<?> type) {
         this.type = type;
+        //ExtensionFactory也是一个拓展点，他的对应的实现类只有是三个个一个是spiExtensionFactory
+        // 一个是SpringExtensionFactory AdaptiveExtensionFactory 在获取getAdaptiveExtension ，AdaptiveExtensionFactory
+        //因为AdaptiveExtensionFactory的头上标注了@Adaptive，所以他会被缓存到cachedAdaptiveClass（拓展点的自适应实现，一个拓展点
+        // 只有一个自适应实现，如果dubbo的拓展点的实现没有标注@Adaptive的那么dubbo会默认生成一个）
         objectFactory = (type == ExtensionFactory.class ? null : ExtensionLoader.getExtensionLoader(ExtensionFactory.class).getAdaptiveExtension());
     }
 
@@ -107,16 +111,20 @@ public class ExtensionLoader<T> {
     public static <T> ExtensionLoader<T> getExtensionLoader(Class<T> type) {
         if (type == null)
             throw new IllegalArgumentException("Extension type == null");
+        //不是接口报错
         if (!type.isInterface()) {
             throw new IllegalArgumentException("Extension type(" + type + ") is not interface!");
         }
+        //没有拓展点标致报错
         if (!withExtensionAnnotation(type)) {
             throw new IllegalArgumentException("Extension type(" + type +
                     ") is not extension, because WITHOUT @" + SPI.class.getSimpleName() + " Annotation!");
         }
 
+        //从缓存取ExtensionLoader
         ExtensionLoader<T> loader = (ExtensionLoader<T>) EXTENSION_LOADERS.get(type);
         if (loader == null) {
+            //没有则新建一个，调用ExtensionLoader的内部构造方法 ，并放到缓存里面
             EXTENSION_LOADERS.putIfAbsent(type, new ExtensionLoader<T>(type));
             loader = (ExtensionLoader<T>) EXTENSION_LOADERS.get(type);
         }
@@ -447,7 +455,9 @@ public class ExtensionLoader<T> {
 
     @SuppressWarnings("unchecked")
     public T getAdaptiveExtension() {
+        //获取本地缓存拓展点
         Object instance = cachedAdaptiveInstance.get();
+        //双重检查锁
         if (instance == null) {
             if (createAdaptiveInstanceError == null) {
                 synchronized (cachedAdaptiveInstance) {
@@ -510,6 +520,7 @@ public class ExtensionLoader<T> {
             //dubbo的IOC反转控制，就是从spi和spring里面提取对象赋值。
             injectExtension(instance); //拓展点自适应
             Set<Class<?>> wrapperClasses = cachedWrapperClasses;
+            //aop的实现
             if (wrapperClasses != null && !wrapperClasses.isEmpty()) {
                 for (Class<?> wrapperClass : wrapperClasses) {
                     instance = injectExtension((T) wrapperClass.getConstructor(type).newInstance(instance));
@@ -575,6 +586,10 @@ public class ExtensionLoader<T> {
         return clazz;
     }
 
+    /**
+     * 方法执行后，当前拓展类的具体实现信息就会被缓存起来
+     * @return
+     */
     private Map<String, Class<?>> getExtensionClasses() {
         Map<String, Class<?>> classes = cachedClasses.get();
         if (classes == null) { //双重保证
@@ -752,6 +767,7 @@ public class ExtensionLoader<T> {
     @SuppressWarnings("unchecked")
     private T createAdaptiveExtension() {
         try {
+            //先获取到实现类的一个动态代理适配器类，然后再通过AOP把属性注入到setter方法里面
             return injectExtension((T) getAdaptiveExtensionClass().newInstance());
         } catch (Exception e) {
             throw new IllegalStateException("Can not create adaptive extension " + type + ", cause: " + e.getMessage(), e);
@@ -763,6 +779,7 @@ public class ExtensionLoader<T> {
         if (cachedAdaptiveClass != null) {
             return cachedAdaptiveClass;
         }
+        //自动生成和编译一个动态代理适配器类
         return cachedAdaptiveClass = createAdaptiveExtensionClass();
     }
 
@@ -775,6 +792,7 @@ public class ExtensionLoader<T> {
         String code = createAdaptiveExtensionClassCode();
         //类加载器
         ClassLoader classLoader = findClassLoader();
+        //拓展点动态获取Compiler
         org.apache.dubbo.common.compiler.Compiler compiler = ExtensionLoader.getExtensionLoader(org.apache.dubbo.common.compiler.Compiler.class).getAdaptiveExtension();
         //动态编译
         return compiler.compile(code, classLoader);
