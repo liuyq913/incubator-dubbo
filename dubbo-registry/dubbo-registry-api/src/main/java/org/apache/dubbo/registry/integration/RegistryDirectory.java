@@ -184,8 +184,8 @@ public class RegistryDirectory<T> extends AbstractDirectory<T> implements Notify
    //注册中心节点变化后，刷新服务提供者
     @Override
     public synchronized void notify(List<URL> urls) {
-        List<URL> invokerUrls = new ArrayList<URL>();
-        List<URL> routerUrls = new ArrayList<URL>();
+        List<URL> invokerUrls = new ArrayList<URL>(); //服务提供者url
+        List<URL> routerUrls = new ArrayList<URL>(); //路由url
         List<URL> configuratorUrls = new ArrayList<URL>(); //配置url
         for (URL url : urls) {
             String protocol = url.getProtocol();
@@ -247,7 +247,7 @@ public class RegistryDirectory<T> extends AbstractDirectory<T> implements Notify
                 invokerUrls.addAll(this.cachedInvokerUrls);
             } else {
                 this.cachedInvokerUrls = new HashSet<URL>();
-                this.cachedInvokerUrls.addAll(invokerUrls);//Cached invoker urls, convenient for comparison
+                this.cachedInvokerUrls.addAll(invokerUrls);//Cached invoker urls, convenient for comparison  缓存的调用器URL，便于比较
             }
             if (invokerUrls.isEmpty()) {
                 return;
@@ -281,7 +281,7 @@ public class RegistryDirectory<T> extends AbstractDirectory<T> implements Notify
                 List<Invoker<T>> groupInvokers = groupMap.get(group);
                 if (groupInvokers == null) {
                     groupInvokers = new ArrayList<Invoker<T>>();
-                    groupMap.put(group, groupInvokers);
+                    groupMap.put(group, groupInvokers); //按组分
                 }
                 groupInvokers.add(invoker);
             }
@@ -290,7 +290,8 @@ public class RegistryDirectory<T> extends AbstractDirectory<T> implements Notify
             } else if (groupMap.size() > 1) {
                 List<Invoker<T>> groupInvokers = new ArrayList<Invoker<T>>();
                 for (List<Invoker<T>> groupList : groupMap.values()) {
-                    groupInvokers.add(cluster.join(new StaticDirectory<T>(groupList)));
+                    //// 通过集群类合并每个分组对应的 Invoker 列表
+                    groupInvokers.add(cluster.join(new StaticDirectory<T>(groupList)));//通过集群，一个组一个invoker
                 }
                 result.put(method, groupInvokers);
             } else {
@@ -504,7 +505,7 @@ public class RegistryDirectory<T> extends AbstractDirectory<T> implements Notify
         for (String method : new HashSet<String>(newMethodInvokerMap.keySet())) {
             List<Invoker<T>> methodInvokers = newMethodInvokerMap.get(method);
             Collections.sort(methodInvokers, InvokerComparator.getComparator());
-            newMethodInvokerMap.put(method, Collections.unmodifiableList(methodInvokers));
+            newMethodInvokerMap.put(method, Collections.unmodifiableList(methodInvokers)); //返回一个不能更改的是视图
         }
         return Collections.unmodifiableMap(newMethodInvokerMap);
     }
@@ -586,11 +587,12 @@ public class RegistryDirectory<T> extends AbstractDirectory<T> implements Notify
                             + " use dubbo version " + Version.getVersion() + ", please check status of providers(disabled, not registered or in blacklist).");
         }
         List<Invoker<T>> invokers = null;
-        //
+        // 为了实现泛化调用， methodInvokerMap 里面一定有一个 键为*的值
         Map<String, List<Invoker<T>>> localMethodInvokerMap = this.methodInvokerMap; // local reference
         if (localMethodInvokerMap != null && localMethodInvokerMap.size() > 0) {
             String methodName = RpcUtils.getMethodName(invocation);
             Object[] args = RpcUtils.getArguments(invocation);
+            //第一个只值是否是枚举类型或者String类型
             if (args != null && args.length > 0 && args[0] != null
                     && (args[0] instanceof String || args[0].getClass().isEnum())) {
                 invokers = localMethodInvokerMap.get(methodName + "." + args[0]); // The routing can be enumerated according to the first parameter
