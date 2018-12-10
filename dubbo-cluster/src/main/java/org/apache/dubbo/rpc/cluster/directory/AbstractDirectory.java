@@ -79,7 +79,7 @@ public abstract class AbstractDirectory<T> implements Directory<T> {
                 try {
                     //runtime 这个参数是在指是否在每次调用服务之前都要执行路由规则，runtime = true 则每次调用都需要执行路由规则
                     if (router.getUrl() == null || router.getUrl().getParameter(Constants.RUNTIME_KEY, false)) {
-                        //服务路由
+                        //服务路由  筛选出invokers的子集  目前 Dubbo 提供了基于IP、应用名和协议等的静态路由来实现服务过滤
                         invokers = router.route(invokers, getConsumerUrl(), invocation);
                     }
                 } catch (Throwable t) {

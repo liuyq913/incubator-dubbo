@@ -38,4 +38,9 @@
     <!-- declare the service interface to be exported -->
     <dubbo:service interface="org.apache.dubbo.demo.DemoService" ref="demoService"/>
     <!--<dubbo:service interface="org.apache.dubbo.demo.DemoService2" ref="demoService2"/>-->
+
+    <!--一致性哈希， 配置以第一个参数进行哈希-->
+    <dubbo:parameter key="hash.arguments" value="0,1" />
+    <!--配置需要多少份虚拟节点，也就是一个提供服务的实例需要冗余多少份，默认是160份虚拟节点-->
+    <dubbo:parameter key="hash.nodes" value="320" />
 </beans>

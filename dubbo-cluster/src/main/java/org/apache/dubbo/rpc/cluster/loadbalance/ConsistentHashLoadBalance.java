@@ -33,6 +33,7 @@ import java.util.concurrent.ConcurrentMap;
 
 /**
  * ConsistentHashLoadBalance
+ * 一致性哈希
  *
  */
 public class ConsistentHashLoadBalance extends AbstractLoadBalance {
@@ -40,14 +41,24 @@ public class ConsistentHashLoadBalance extends AbstractLoadBalance {
 
     private final ConcurrentMap<String, ConsistentHashSelector<?>> selectors = new ConcurrentHashMap<String, ConsistentHashSelector<?>>();
 
+    /**
+     * 从多个Invoker挑选一个出来
+     * @param invokers
+     * @param url
+     * @param invocation
+     * @param <T>
+     * @return
+     */
     @SuppressWarnings("unchecked")
     @Override
     protected <T> Invoker<T> doSelect(List<Invoker<T>> invokers, URL url, Invocation invocation) {
+        //获取调用方法名
         String methodName = RpcUtils.getMethodName(invocation);
         String key = invokers.get(0).getUrl().getServiceKey() + "." + methodName;
         int identityHashCode = System.identityHashCode(invokers);
         ConsistentHashSelector<T> selector = (ConsistentHashSelector<T>) selectors.get(key);
         if (selector == null || selector.identityHashCode != identityHashCode) {
+            //没有存在 selector 或者 invokers 实例有变化，重新创建
             selectors.put(key, new ConsistentHashSelector<T>(invokers, methodName, identityHashCode));
             selector = (ConsistentHashSelector<T>) selectors.get(key);
         }
@@ -65,18 +76,23 @@ public class ConsistentHashLoadBalance extends AbstractLoadBalance {
         private final int[] argumentIndex;
 
         ConsistentHashSelector(List<Invoker<T>> invokers, String methodName, int identityHashCode) {
+            //虚拟节点
             this.virtualInvokers = new TreeMap<Long, Invoker<T>>();
             this.identityHashCode = identityHashCode;
             URL url = invokers.get(0).getUrl();
+            //虚拟节点数 默认160个
             this.replicaNumber = url.getMethodParameter(methodName, "hash.nodes", 160);
+            // 需要哈希的参数 默认第一个
             String[] index = Constants.COMMA_SPLIT_PATTERN.split(url.getMethodParameter(methodName, "hash.arguments", "0"));
+
+            // 记录需要哈希的参数的下标
             argumentIndex = new int[index.length];
             for (int i = 0; i < index.length; i++) {
                 argumentIndex[i] = Integer.parseInt(index[i]);
             }
             for (Invoker<T> invoker : invokers) {
                 String address = invoker.getUrl().getAddress();
-                for (int i = 0; i < replicaNumber / 4; i++) {
+                for (int i = 0; i < replicaNumber / 4; i++) { //虚拟节点分为4分
                     byte[] digest = md5(address + i);
                     for (int h = 0; h < 4; h++) {
                         long m = hash(digest, h);

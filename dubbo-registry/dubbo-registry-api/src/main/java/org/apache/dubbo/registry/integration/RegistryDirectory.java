@@ -62,15 +62,17 @@ public class RegistryDirectory<T> extends AbstractDirectory<T> implements Notify
     //默认failover
     private static final Cluster cluster = ExtensionLoader.getExtensionLoader(Cluster.class).getAdaptiveExtension();
 
+    //路由工厂
     private static final RouterFactory routerFactory = ExtensionLoader.getExtensionLoader(RouterFactory.class).getAdaptiveExtension();
-
+    //配置实现工厂
     private static final ConfiguratorFactory configuratorFactory = ExtensionLoader.getExtensionLoader(ConfiguratorFactory.class).getAdaptiveExtension();
+    //服务key，默认为服务接口名
     private final String serviceKey; // Initialization at construction time, assertion not null
-    private final Class<T> serviceType; // Initialization at construction time, assertion not null
-    private final Map<String, String> queryMap; // Initialization at construction time, assertion not null
-    private final URL directoryUrl; // Initialization at construction time, assertion not null, and always assign non null value
-    private final String[] serviceMethods;
-    private final boolean multiGroup;
+    private final Class<T> serviceType; //服务提供者接口类，例如interface com.alibaba.dubbo.demo.DemoService  Initialization at construction time, assertion not null
+    private final Map<String, String> queryMap; //服务消费者所有属性 Initialization at construction time, assertion not null
+    private final URL directoryUrl; // 注册中心url Initialization at construction time, assertion not null, and always assign non null value
+    private final String[] serviceMethods; //引用服务提供者方法数组。
+    private final boolean multiGroup; //是否引用多个组服务
     private Protocol protocol; // Initialization at the time of injection, the assertion is not null
     private Registry registry; // Initialization at the time of injection, the assertion is not null
     private volatile boolean forbidden = false;
@@ -155,9 +157,10 @@ public class RegistryDirectory<T> extends AbstractDirectory<T> implements Notify
         this.registry = registry;
     }
     //服务订阅
-    public void subscribe(URL url) {
-        setConsumerUrl(url);
-        registry.subscribe(url, this); //这里的category 有 providers consumers routers 则会在那三个目录下创建监听，当节点更新
+        public void subscribe(URL url) {
+        setConsumerUrl(url); //设置消费者url
+        registry.subscribe(url, this); //这里的category有 providers consumers routers 订阅服务则会
+         // 在那三个目录下创建监听，当节点更新
         // 删除  新增都会 RegistryDirectory#void notify(List< URL> urls）
     }
 
@@ -231,12 +234,13 @@ public class RegistryDirectory<T> extends AbstractDirectory<T> implements Notify
      * 2.If the incoming invoker list is not empty, it means that it is the latest invoker list
      * 3.If the list of incoming invokerUrl is empty, It means that the rule is only a override rule or a route rule, which needs to be re-contrasted to decide whether to re-reference.
      *
-     * @param invokerUrls this parameter can't be null
+     * @param invokerUrls this parameter can't be null  刷新服务主要是更新  methodInvokerMap    urlInvokerMap
      */
     // TODO: 2017/8/31 FIXME The thread pool should be used to refresh the address, otherwise the task may be accumulated.
     private void refreshInvoker(List<URL> invokerUrls) {
         if (invokerUrls != null && invokerUrls.size() == 1 && invokerUrls.get(0) != null
-                && Constants.EMPTY_PROTOCOL.equals(invokerUrls.get(0).getProtocol())) { //如果服务提供者只有1个而且，协议是empty 则清空所有的服务
+                ////如果服务提供者只有1个而且，协议是empty 则清空所有的服务
+                && Constants.EMPTY_PROTOCOL.equals(invokerUrls.get(0).getProtocol())) {
             this.forbidden = true; // Forbid to access
             this.methodInvokerMap = null; // Set the method invoker map to null
             destroyAllInvokers(); // Close all invokers 销毁所有的服务提供者
@@ -263,7 +267,8 @@ public class RegistryDirectory<T> extends AbstractDirectory<T> implements Notify
             this.methodInvokerMap = multiGroup ? toMergeMethodInvokerMap(newMethodInvokerMap) : newMethodInvokerMap;
             this.urlInvokerMap = newUrlInvokerMap;
             try {
-                destroyUnusedInvokers(oldUrlInvokerMap, newUrlInvokerMap); // Close the unused Invoker 删除老的invokerMap里面不需要的部分
+                //删除老的invokerMap里面不需要的部分
+                destroyUnusedInvokers(oldUrlInvokerMap, newUrlInvokerMap); // Close the unused Invoker
             } catch (Exception e) {
                 logger.warn("destroyUnusedInvokers error. ", e);
             }
@@ -275,8 +280,10 @@ public class RegistryDirectory<T> extends AbstractDirectory<T> implements Notify
         for (Map.Entry<String, List<Invoker<T>>> entry : methodMap.entrySet()) {
             String method = entry.getKey();
             List<Invoker<T>> invokers = entry.getValue();
+            //按组分服务
             Map<String, List<Invoker<T>>> groupMap = new HashMap<String, List<Invoker<T>>>();
             for (Invoker<T> invoker : invokers) {
+                //获取到组
                 String group = invoker.getUrl().getParameter(Constants.GROUP_KEY, "");
                 List<Invoker<T>> groupInvokers = groupMap.get(group);
                 if (groupInvokers == null) {
@@ -285,7 +292,7 @@ public class RegistryDirectory<T> extends AbstractDirectory<T> implements Notify
                 }
                 groupInvokers.add(invoker);
             }
-            if (groupMap.size() == 1) {
+            if (groupMap.size() == 1) { //只有一个组
                 result.put(method, groupMap.values().iterator().next());
             } else if (groupMap.size() > 1) {
                 List<Invoker<T>> groupInvokers = new ArrayList<Invoker<T>>();
@@ -411,6 +418,7 @@ public class RegistryDirectory<T> extends AbstractDirectory<T> implements Notify
      * @return
      */
     private URL mergeUrl(URL providerUrl) {
+
         providerUrl = ClusterUtils.mergeUrl(providerUrl, queryMap); // 用消费端配置属性覆盖服务端属性  Merge the consumer side parameters
 
         List<Configurator> localConfigurators = this.configurators; // local reference

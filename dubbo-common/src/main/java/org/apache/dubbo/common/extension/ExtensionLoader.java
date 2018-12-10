@@ -520,7 +520,7 @@ public class ExtensionLoader<T> {
             //dubbo的IOC反转控制，就是从spi和spring里面提取对象赋值。
             injectExtension(instance); //拓展点自适应
             Set<Class<?>> wrapperClasses = cachedWrapperClasses;
-            //aop的实现
+            //aop的实现  包裹wrapper
             if (wrapperClasses != null && !wrapperClasses.isEmpty()) {
                 for (Class<?> wrapperClass : wrapperClasses) {
                     instance = injectExtension((T) wrapperClass.getConstructor(type).newInstance(instance));
