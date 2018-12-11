@@ -165,6 +165,11 @@ public class ConsistentHashLoadBalance extends AbstractLoadBalance {
         }
 
 
+        /**
+         * 通过hash值来获取Invoker
+         * @param hash
+         * @return
+         */
         private Invoker<T> sekectForKey(long hash) {
             Long key = Long.valueOf(hash);
             if (!this.virtualInvokers.containsKey(key)) {
