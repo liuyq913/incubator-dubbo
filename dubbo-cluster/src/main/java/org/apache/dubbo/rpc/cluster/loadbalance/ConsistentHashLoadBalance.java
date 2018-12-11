@@ -27,6 +27,7 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.List;
 import java.util.Map;
+import java.util.SortedMap;
 import java.util.TreeMap;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -58,10 +59,12 @@ public class ConsistentHashLoadBalance extends AbstractLoadBalance {
         int identityHashCode = System.identityHashCode(invokers);
         ConsistentHashSelector<T> selector = (ConsistentHashSelector<T>) selectors.get(key);
         if (selector == null || selector.identityHashCode != identityHashCode) {
-            //没有存在 selector 或者 invokers 实例有变化，重新创建
+            //没有存在 selector 或者 invokers 实例有变化，重新创建选择器
             selectors.put(key, new ConsistentHashSelector<T>(invokers, methodName, identityHashCode));
+            //选取选择器
             selector = (ConsistentHashSelector<T>) selectors.get(key);
         }
+        // 选择结点
         return selector.select(invocation);
     }
 
@@ -90,10 +93,14 @@ public class ConsistentHashLoadBalance extends AbstractLoadBalance {
             for (int i = 0; i < index.length; i++) {
                 argumentIndex[i] = Integer.parseInt(index[i]);
             }
+            //每个invoker生成replicaNumber个虚拟节点
             for (Invoker<T> invoker : invokers) {
                 String address = invoker.getUrl().getAddress();
-                for (int i = 0; i < replicaNumber / 4; i++) { //虚拟节点分为4分
+                for (int i = 0; i < replicaNumber / 4; i++) {
+                    // 根据md5算法为每4个结点生成一个消息摘要，摘要长为16字节128位。
                     byte[] digest = md5(address + i);
+                    // 随后将128位分为4部分，0-31,32-63,64-95,95-128，并生成4个32位数，存于long中，long的高32位都为0
+                    // 并作为虚拟结点的key。
                     for (int h = 0; h < 4; h++) {
                         long m = hash(digest, h);
                         virtualInvokers.put(m, invoker);
@@ -102,10 +109,14 @@ public class ConsistentHashLoadBalance extends AbstractLoadBalance {
             }
         }
 
+        //选择节点
         public Invoker<T> select(Invocation invocation) {
+            //根据调用参数得到key
             String key = toKey(invocation.getArguments());
+            //得到这个key的消息摘要
             byte[] digest = md5(key);
-            return selectForKey(hash(digest, 0));
+            //取消息体的0-31位进行hash
+            return sekectForKey(hash(digest, 0));
         }
 
         private String toKey(Object[] args) {
@@ -119,6 +130,7 @@ public class ConsistentHashLoadBalance extends AbstractLoadBalance {
         }
 
         private Invoker<T> selectForKey(long hash) {
+            //返回与大于或等于给定键的最小键相关联的键值映射
             Map.Entry<Long, Invoker<T>> entry = virtualInvokers.ceilingEntry(hash);
             if (entry == null) {
                 entry = virtualInvokers.firstEntry();
@@ -152,6 +164,24 @@ public class ConsistentHashLoadBalance extends AbstractLoadBalance {
             return md5.digest();
         }
 
+
+        private Invoker<T> sekectForKey(long hash) {
+            Long key = Long.valueOf(hash);
+            if (!this.virtualInvokers.containsKey(key)) {
+                //选择器不包含这个key 则 返回键大于的key的试图
+                SortedMap tailMap = this.virtualInvokers.tailMap(key);
+                if (tailMap.isEmpty()) {
+                    //为空则去第一个
+                    key = (Long) this.virtualInvokers.firstKey();
+                } else {
+                    //取键大于key的视图的第一个值
+                    key = (Long) tailMap.firstKey();
+                }
+            }
+            //如果所得的key更好等于虚拟节点上的值，直接返回
+            Invoker invoker = (Invoker) this.virtualInvokers.get(key);
+            return invoker;
+        }
     }
 
 }

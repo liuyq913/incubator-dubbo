@@ -44,7 +44,7 @@ public interface Invocation {
     Class<?>[] getParameterTypes();
 
     /**
-     * get arguments.
+     * get arguments. 获取参数
      *
      * @return arguments.
      * @serial
