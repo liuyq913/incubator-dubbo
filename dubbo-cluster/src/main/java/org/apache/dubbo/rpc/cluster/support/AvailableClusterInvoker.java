@@ -27,7 +27,7 @@ import java.util.List;
 
 /**
  * AvailableCluster
- *
+ * 集群策略 --  取第一个而可用的服务提供
  */
 public class AvailableClusterInvoker<T> extends AbstractClusterInvoker<T> {
 

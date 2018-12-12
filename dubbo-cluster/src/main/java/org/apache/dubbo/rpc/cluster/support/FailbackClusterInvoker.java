@@ -44,6 +44,8 @@ import java.util.concurrent.TimeUnit;
  *
  * <a href="http://en.wikipedia.org/wiki/Failback">Failback</a>
  *
+ * 集群容错 -- 失败之后立即返回，记录失败的，定时去重试
+ *
  */
 public class FailbackClusterInvoker<T> extends AbstractClusterInvoker<T> {
 
@@ -69,6 +71,7 @@ public class FailbackClusterInvoker<T> extends AbstractClusterInvoker<T> {
         if (retryFuture == null) {
             synchronized (this) {
                 if (retryFuture == null) {
+                    //5s重试一次
                     retryFuture = scheduledExecutorService.scheduleWithFixedDelay(new Runnable() {
 
                         @Override
@@ -84,6 +87,7 @@ public class FailbackClusterInvoker<T> extends AbstractClusterInvoker<T> {
                 }
             }
         }
+        //往重试列表添加
         failed.put(invocation, router);
     }
 
@@ -113,7 +117,7 @@ public class FailbackClusterInvoker<T> extends AbstractClusterInvoker<T> {
             logger.error("Failback to invoke method " + invocation.getMethodName() + ", wait for retry in background. Ignored exception: "
                     + e.getMessage() + ", ", e);
             addFailed(invocation, this);
-            return new RpcResult(); // ignore
+            return new RpcResult(); // ignore 失败也返回
         }
     }
 

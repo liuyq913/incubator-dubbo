@@ -108,7 +108,7 @@ public abstract class AbstractClusterInvoker<T> implements Invoker<T> {
      * @param invokers    invoker candidates
      * @param selected    exclude selected invokers or not
      * @return the invoker which will final to do invoke.
-     * @throws RpcException
+     * @throws RpcException  根据各自不同的负载均衡的算法来选择服务提供
      */
     protected Invoker<T> select(LoadBalance loadbalance, Invocation invocation, List<Invoker<T>> invokers, List<Invoker<T>> selected) throws RpcException {
         if (invokers == null || invokers.isEmpty()) {
@@ -116,15 +116,17 @@ public abstract class AbstractClusterInvoker<T> implements Invoker<T> {
         }
         String methodName = invocation == null ? "" : invocation.getMethodName();
 
+        //sticky机制（粘性），如果开启了粘性机制的话。通过< dubbo:method sticky=”true”/>,默认不开启。
+        // 如果开启，上一次该服务调用的是哪个服务提供者，只要调用过程中不发生错误，后续都会选择该服务提供者进行调用
         boolean sticky = invokers.get(0).getUrl().getMethodParameter(methodName, Constants.CLUSTER_STICKY_KEY, Constants.DEFAULT_CLUSTER_STICKY);
         {
             //ignore overloaded method
-            if (stickyInvoker != null && !invokers.contains(stickyInvoker)) {
+            if (stickyInvoker != null && !invokers.contains(stickyInvoker)) { //粘性服务不为空，而且可用服务不包含粘性服务 ，则置为null
                 stickyInvoker = null;
             }
             //ignore concurrency problem
             if (sticky && stickyInvoker != null && (selected == null || !selected.contains(stickyInvoker))) {
-                if (availablecheck && stickyInvoker.isAvailable()) {
+                if (availablecheck && stickyInvoker.isAvailable()) { //粘性服务可用
                     return stickyInvoker;
                 }
             }
@@ -241,10 +243,12 @@ public abstract class AbstractClusterInvoker<T> implements Invoker<T> {
             ((RpcInvocation) invocation).addAttachments(contextAttachments);
         }
 
-        List<Invoker<T>> invokers = list(invocation); //从引用商上下文获取服务提供列表，最终会调用RegistryDirectory.doList方法来列举服务列表
+        //从引用商上下文获取服务提供列表，最终会调用RegistryDirectory.doList方法来列举服务列表
+        List<Invoker<T>> invokers = list(invocation);
+        //spi获取负载均衡策略 ，默认随机
         LoadBalance loadbalance = initLoadBalance(invokers, invocation);
         RpcUtils.attachInvocationIdIfAsync(getUrl(), invocation);
-        return doInvoke(invocation, invokers, loadbalance);
+        return doInvoke(invocation, invokers, loadbalance); //根据负载均衡策略，请求会话，服务提供列表 获取结果
     }
 
     protected void checkWhetherDestroyed() {

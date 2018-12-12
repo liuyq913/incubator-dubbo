@@ -44,6 +44,7 @@ public class FailfastClusterInvoker<T> extends AbstractClusterInvoker<T> {
     public Result doInvoke(Invocation invocation, List<Invoker<T>> invokers, LoadBalance loadbalance) throws RpcException {
         checkInvokers(invokers, invocation);
         Invoker<T> invoker = select(loadbalance, invocation, invokers, null);
+        //调用失败，立即返回  通常用于非幂等性的写操作，比如新增记录。
         try {
             return invoker.invoke(invocation);
         } catch (Throwable e) {

@@ -39,6 +39,9 @@ import java.util.concurrent.atomic.AtomicInteger;
  * Invoke a specific number of invokers concurrently, usually used for demanding real-time operations, but need to waste more service resources.
  *
  * <a href="http://en.wikipedia.org/wiki/Fork_(topology)">Fork</a>
+ * 并行调用多个服务提供者，当一个服务提供者返回成功，则返回成功
+ * 实时性要求比较高的场景，但浪费服务器资源，通常可以通过forks参数设置并发调用度。
+ *
  */
 public class ForkingClusterInvoker<T> extends AbstractClusterInvoker<T> {
 
@@ -46,6 +49,7 @@ public class ForkingClusterInvoker<T> extends AbstractClusterInvoker<T> {
      * Use {@link NamedInternalThreadFactory} to produce {@link org.apache.dubbo.common.threadlocal.InternalThread}
      * which with the use of {@link org.apache.dubbo.common.threadlocal.InternalThreadLocal} in {@link RpcContext}.
      */
+    //可缓存的线程池，需求过多，则新增规模，过小则回收，线程池的规模没用限
     private final ExecutorService executor = Executors.newCachedThreadPool(
             new NamedInternalThreadFactory("forking-cluster-timer", true));
 
@@ -58,15 +62,15 @@ public class ForkingClusterInvoker<T> extends AbstractClusterInvoker<T> {
     public Result doInvoke(final Invocation invocation, List<Invoker<T>> invokers, LoadBalance loadbalance) throws RpcException {
         try {
             checkInvokers(invokers, invocation);
-            final List<Invoker<T>> selected;
+            final List<Invoker<T>> selected; //已经使用列表
             final int forks = getUrl().getParameter(Constants.FORKS_KEY, Constants.DEFAULT_FORKS);
             final int timeout = getUrl().getParameter(Constants.TIMEOUT_KEY, Constants.DEFAULT_TIMEOUT);
             if (forks <= 0 || forks >= invokers.size()) {
-                selected = invokers;
+                selected = invokers; //已使用列表为所有服务
             } else {
                 selected = new ArrayList<>();
-                for (int i = 0; i < forks; i++) {
-                    // TODO. Add some comment here, refer chinese version for more details.
+                for (int i = 0; i < forks; i++) { //服务数大于forks的数量的时候，则用负载均衡选出fokers个来调用
+                    // TODO. Add some comment here, refer chinese versiforkson for more details.
                     Invoker<T> invoker = select(loadbalance, invocation, invokers, selected);
                     if (!selected.contains(invoker)) {
                         //Avoid add the same invoker several times.
@@ -74,26 +78,27 @@ public class ForkingClusterInvoker<T> extends AbstractClusterInvoker<T> {
                     }
                 }
             }
-            RpcContext.getContext().setInvokers((List) selected);
+            RpcContext.getContext().setInvokers((List) selected); //上下文设置invoker todo 不太清楚
             final AtomicInteger count = new AtomicInteger();
-            final BlockingQueue<Object> ref = new LinkedBlockingQueue<>();
+            final BlockingQueue<Object> ref = new LinkedBlockingQueue<>(); //无边界阻塞队列
             for (final Invoker<T> invoker : selected) {
                 executor.execute(new Runnable() {
                     @Override
                     public void run() {
                         try {
                             Result result = invoker.invoke(invocation);
-                            ref.offer(result);
+                            ref.offer(result); //入队列，成功则返回true，否则返回false
                         } catch (Throwable e) {
-                            int value = count.incrementAndGet();
+                            int value = count.incrementAndGet(); //cas+1
                             if (value >= selected.size()) {
-                                ref.offer(e);
+                                ref.offer(e); //将异常信息入队列
                             }
                         }
                     }
                 });
             }
             try {
+                //取走BlockingQueue里排在首位的对象,若不能立即取出,则可以等time参数规定的时间,取不到时返回null
                 Object ret = ref.poll(timeout, TimeUnit.MILLISECONDS);
                 if (ret instanceof Throwable) {
                     Throwable e = (Throwable) ret;
