@@ -80,7 +80,7 @@ public class ForkingClusterInvoker<T> extends AbstractClusterInvoker<T> {
             }
             RpcContext.getContext().setInvokers((List) selected); //上下文设置invoker todo 不太清楚
             final AtomicInteger count = new AtomicInteger();
-            final BlockingQueue<Object> ref = new LinkedBlockingQueue<>(); //无边界阻塞队列
+            final BlockingQueue<Object> ref = new LinkedBlockingQueue<>(); //无边界阻塞队列（线程安全的）
             for (final Invoker<T> invoker : selected) {
                 executor.execute(new Runnable() {
                     @Override
@@ -91,7 +91,9 @@ public class ForkingClusterInvoker<T> extends AbstractClusterInvoker<T> {
                         } catch (Throwable e) {
                             int value = count.incrementAndGet(); //cas+1
                             if (value >= selected.size()) {
-                                ref.offer(e); //将异常信息入队列
+                                ref.offer(e); //这里这里非常巧妙:当count的值大于或者等于服务的数量的时候将异常信息入队列,
+                                              //所以，队列里面有异常的值的时候，一定是所以的服务都调用失败的时候，只要没有异常，
+                                                //就表示，多个服务调用中至少有一个是成功的。
                             }
                         }
                     }
@@ -100,7 +102,7 @@ public class ForkingClusterInvoker<T> extends AbstractClusterInvoker<T> {
             try {
                 //取走BlockingQueue里排在首位的对象,若不能立即取出,则可以等time参数规定的时间,取不到时返回null
                 Object ret = ref.poll(timeout, TimeUnit.MILLISECONDS);
-                if (ret instanceof Throwable) {
+                if (ret instanceof Throwable) { //有异常则表示所有的服务都是调用失败的。
                     Throwable e = (Throwable) ret;
                     throw new RpcException(e instanceof RpcException ? ((RpcException) e).getCode() : 0, "Failed to forking invoke provider " + selected + ", but no luck to perform the invocation. Last error is: " + e.getMessage(), e.getCause() != null ? e.getCause() : e);
                 }
