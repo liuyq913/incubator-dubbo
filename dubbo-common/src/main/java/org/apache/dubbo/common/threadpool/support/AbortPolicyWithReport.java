@@ -35,6 +35,14 @@ import java.util.concurrent.ThreadPoolExecutor;
 /**
  * Abort Policy.
  * Log warn info when abort.
+ *
+ *
+ * AbortPolicy 直接抛出异常
+ *
+ *
+ * 线程池的拒绝策略：
+ *  （1）AbortPolicy  直接抛出异常
+ *
  */
 public class AbortPolicyWithReport extends ThreadPoolExecutor.AbortPolicy {
 
