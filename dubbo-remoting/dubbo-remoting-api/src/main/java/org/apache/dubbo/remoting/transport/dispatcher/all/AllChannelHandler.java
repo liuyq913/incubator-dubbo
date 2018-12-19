@@ -36,7 +36,7 @@ public class AllChannelHandler extends WrappedChannelHandler {
         super(handler, url);
     }
 
-    @Override
+    @Override  //服务端连接到客户端之后，方法被调用
     public void connected(Channel channel) throws RemotingException {
         ExecutorService cexecutor = getExecutorService();
         try {
@@ -46,7 +46,7 @@ public class AllChannelHandler extends WrappedChannelHandler {
         }
     }
 
-    @Override
+    @Override //服务端与客户端断开的时候，方法被调用
     public void disconnected(Channel channel) throws RemotingException {
         ExecutorService cexecutor = getExecutorService();
         try {
@@ -56,7 +56,7 @@ public class AllChannelHandler extends WrappedChannelHandler {
         }
     }
 
-    @Override
+    @Override //服务端接受到客户端的请求之后，经过io线程就会首先从二进制流中节码请求 ，message就是调用请求
     public void received(Channel channel, Object message) throws RemotingException {
         ExecutorService cexecutor = getExecutorService();
         try {

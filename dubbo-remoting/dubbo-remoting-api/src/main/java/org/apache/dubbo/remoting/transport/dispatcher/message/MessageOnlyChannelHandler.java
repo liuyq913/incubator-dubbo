@@ -27,6 +27,9 @@ import org.apache.dubbo.remoting.transport.dispatcher.WrappedChannelHandler;
 
 import java.util.concurrent.ExecutorService;
 
+/**
+ * 只有请求事件在线程池中执行，其他响应事件、心跳，连接，断开连接等事件在IO线程上执行，故其只需要重写recive方法即可
+ */
 public class MessageOnlyChannelHandler extends WrappedChannelHandler {
 
     public MessageOnlyChannelHandler(ChannelHandler handler, URL url) {

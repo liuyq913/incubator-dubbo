@@ -36,6 +36,10 @@ import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
+/**
+ *用来执行连接、断开事件的线程池，线程池中只有一个线程，并且队列可以选择时有界队列，
+ * 通过connect.queue.capacity属性配置，超过的事件，则拒绝执行
+ */
 public class ConnectionOrderedChannelHandler extends WrappedChannelHandler {
 
     protected final ThreadPoolExecutor connectionExecutor;
@@ -44,7 +48,7 @@ public class ConnectionOrderedChannelHandler extends WrappedChannelHandler {
     public ConnectionOrderedChannelHandler(ChannelHandler handler, URL url) {
         super(handler, url);
         String threadName = url.getParameter(Constants.THREAD_NAME_KEY, Constants.DEFAULT_THREAD_NAME);
-        connectionExecutor = new ThreadPoolExecutor(1, 1,
+        connectionExecutor = new ThreadPoolExecutor(1, 1, //只有一个核心线程，最大线程数是1 ，即使队列满了，也还是只有一个线程来执行任务
                 0L, TimeUnit.MILLISECONDS,
                 new LinkedBlockingQueue<Runnable>(url.getPositiveParameter(Constants.CONNECT_QUEUE_CAPACITY, Integer.MAX_VALUE)),
                 new NamedThreadFactory(threadName, true),
