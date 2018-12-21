@@ -26,11 +26,18 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * EagerThreadPoolExecutor
+ * 特性：
+ * 我们知道，当线程数量达到corePoolSize之后，只有当workqueue满了之后，才会增加工作线程。
+ 这个线程池就是对这个特性做了优化，首先继承ThreadPoolExecutor实现EagerThreadPoolExecutor，对当前线程池提交的任务数submittedTaskCount进行记录。
+ 其次是通过自定义TaskQueue作为workQueue，
+ 它会在提交任务时判断是否currentPoolSize<submittedTaskCount<maxPoolSize，
+ 然后通过它的offer方法返回false导致增加工作线程。
+
  */
 public class EagerThreadPoolExecutor extends ThreadPoolExecutor {
 
     /**
-     * task count
+     * task count  任务数
      */
     private final AtomicInteger submittedTaskCount = new AtomicInteger(0);
 
@@ -68,6 +75,7 @@ public class EagerThreadPoolExecutor extends ThreadPoolExecutor {
             // retry to offer the task into queue.
             final TaskQueue queue = (TaskQueue) super.getQueue();
             try {
+                //失败之后再次去提交一下
                 if (!queue.retryOffer(command, 0, TimeUnit.MILLISECONDS)) {
                     submittedTaskCount.decrementAndGet();
                     throw new RejectedExecutionException("Queue capacity is full.", rx);

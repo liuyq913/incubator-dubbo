@@ -27,6 +27,12 @@ import org.apache.dubbo.remoting.exchange.Request;
 import org.apache.dubbo.remoting.exchange.Response;
 import org.apache.dubbo.remoting.transport.AbstractChannelHandlerDelegate;
 
+/**
+ * 心跳处理器
+ * （1）接收心跳请求，并返回心跳相应
+ * （2）接收心跳相应
+ * （3）接收信息时，重置当前通道的最新收发消息时间
+ */
 public class HeartbeatHandler extends AbstractChannelHandlerDelegate {
 
     private static final Logger logger = LoggerFactory.getLogger(HeartbeatHandler.class);

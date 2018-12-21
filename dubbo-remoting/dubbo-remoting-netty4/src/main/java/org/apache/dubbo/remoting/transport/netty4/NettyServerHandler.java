@@ -31,6 +31,9 @@ import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * NettyClientHandler
+ * netty网络事件处理器
+ * （1）网络层(service/client)端口监听到的网络信息均由改处理器处理
+ * （2） 提供建联，断链，接收信息，发送信息，出现异常等事件语义
  */
 @io.netty.channel.ChannelHandler.Sharable
 public class NettyServerHandler extends ChannelDuplexHandler {
