@@ -42,8 +42,8 @@ public abstract class AbstractServer extends AbstractEndpoint implements Server 
     protected static final String SERVER_THREAD_POOL_NAME = "DubboServerHandler";
     private static final Logger logger = LoggerFactory.getLogger(AbstractServer.class);
     ExecutorService executor;
-    private InetSocketAddress localAddress;
-    private InetSocketAddress bindAddress;
+    private InetSocketAddress localAddress;  //url host:port地址。
+    private InetSocketAddress bindAddress;  //如果是多网卡，并且指定了 bind.ip、bind.port，如果为空，与localAddress相同
     private int accepts;
     private int idleTimeout = 600; //600 seconds
 
