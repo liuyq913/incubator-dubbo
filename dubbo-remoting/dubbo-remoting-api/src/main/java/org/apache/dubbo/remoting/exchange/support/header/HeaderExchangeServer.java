@@ -47,16 +47,17 @@ public class HeaderExchangeServer implements ExchangeServer {
 
     protected final Logger logger = LoggerFactory.getLogger(getClass());
 
+    //心跳线程数
     private final ScheduledExecutorService scheduled = Executors.newScheduledThreadPool(1,
             new NamedThreadFactory(
                     "dubbo-remoting-server-heartbeat",
                     true));
-    private final Server server;
+    private final Server server; //具体的service  nettyService 等
     // heartbeat timer
-    private ScheduledFuture<?> heartbeatTimer;
+    private ScheduledFuture<?> heartbeatTimer; //心跳调度Future，可以通过future取消心跳等动作
     // heartbeat timeout (ms), default value is 0 , won't execute a heartbeat.
-    private int heartbeat;
-    private int heartbeatTimeout;
+    private int heartbeat;//心跳间隔时间
+    private int heartbeatTimeout; //心跳超时时间，至少是心跳间隔时间的两倍
     private AtomicBoolean closed = new AtomicBoolean(false);
 
     public HeaderExchangeServer(Server server) {

@@ -71,7 +71,7 @@ public class Constants {
     public static final String $INVOKE = "$invoke";
 
     public static final String $ECHO = "$echo";
-
+    //默认为(CPU核数+1) 到cpu+32
     public static final int DEFAULT_IO_THREADS = Math.min(Runtime.getRuntime().availableProcessors() + 1, 32);
 
     public static final String DEFAULT_PROXY = "javassist";

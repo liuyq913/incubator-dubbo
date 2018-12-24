@@ -77,6 +77,7 @@ public abstract class AbstractClient extends AbstractEndpoint implements Client 
         reconnect_warning_period = url.getParameter("reconnect.waring.period", 1800);
 
         try {
+            //开启netty客户端
             doOpen();
         } catch (Throwable t) {
             close();
@@ -85,7 +86,7 @@ public abstract class AbstractClient extends AbstractEndpoint implements Client 
                             + " connect to the server " + getRemoteAddress() + ", cause: " + t.getMessage(), t);
         }
         try {
-            // connect.
+            // connect. 连接服务端，建立长连接
             connect();
             if (logger.isInfoEnabled()) {
                 logger.info("Start " + getClass().getSimpleName() + " " + NetUtils.getLocalAddress() + " connect to the server " + getRemoteAddress());

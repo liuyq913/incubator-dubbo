@@ -55,6 +55,10 @@ public class NettyClient extends AbstractClient {
         super(url, wrapChannelHandler(url, handler));
     }
 
+    /**
+     *开启netty客户端
+     * @throws Throwable
+     */
     @Override
     protected void doOpen() throws Throwable {
         final NettyClientHandler nettyClientHandler = new NettyClientHandler(getUrl(), this);

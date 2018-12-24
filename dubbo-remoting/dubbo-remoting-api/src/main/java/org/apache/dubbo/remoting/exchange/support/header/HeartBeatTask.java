@@ -29,7 +29,7 @@ import java.util.Collection;
 final class HeartBeatTask implements Runnable {
 
     private static final Logger logger = LoggerFactory.getLogger(HeartBeatTask.class);
-
+    //channel获取器：用于获取所有需要进行心跳检测的channel
     private ChannelProvider channelProvider;
 
     private int heartbeat;
@@ -42,6 +42,14 @@ final class HeartBeatTask implements Runnable {
         this.heartbeatTimeout = heartbeatTimeout;
     }
 
+    /**
+     * dubbo的心跳机制：
+
+     目的：检测provider与consumer之间的connection连接是不是还连接着，如果连接断了，需要作出相应的处理。
+     原理：
+     provider：dubbo的心跳默认是在heartbeat（默认是60s）内如果没有接收到消息，就会发送心跳消息，如果连着3次（180s）没有收到心跳响应，provider会关闭channel。
+     consumer：dubbo的心跳默认是在60s内如果没有接收到消息，就会发送心跳消息，如果连着3次（180s）没有收到心跳响应，consumer会进行重连。
+     */
     @Override
     public void run() {
         try {
@@ -51,10 +59,13 @@ final class HeartBeatTask implements Runnable {
                     continue;
                 }
                 try {
+                    //最后一次读操作
                     Long lastRead = (Long) channel.getAttribute(
                             HeaderExchangeHandler.KEY_READ_TIMESTAMP);
+                    //最后一次写操作
                     Long lastWrite = (Long) channel.getAttribute(
                             HeaderExchangeHandler.KEY_WRITE_TIMESTAMP);
+                    //如果在heartbeat进行读操作和写操作，则发送心跳请求
                     if ((lastRead != null && now - lastRead > heartbeat)
                             || (lastWrite != null && now - lastWrite > heartbeat)) {
                         Request req = new Request();
@@ -67,16 +78,19 @@ final class HeartBeatTask implements Runnable {
                                     + ", cause: The channel has no data-transmission exceeds a heartbeat period: " + heartbeat + "ms");
                         }
                     }
+                    //如果超过超时时间都没有收到信息
                     if (lastRead != null && now - lastRead > heartbeatTimeout) {
                         logger.warn("Close channel " + channel
                                 + ", because heartbeat read idle time out: " + heartbeatTimeout + "ms");
                         if (channel instanceof Client) {
                             try {
+                                //consumer 进行重连
                                 ((Client) channel).reconnect();
                             } catch (Exception e) {
                                 //do nothing
                             }
                         } else {
+                            //provider关闭
                             channel.close();
                         }
                     }

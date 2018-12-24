@@ -54,12 +54,12 @@ public class NettyServer extends AbstractServer implements Server {
 
     private Map<String, Channel> channels; // <ip:port, channel>
 
-    private ServerBootstrap bootstrap;
+    private ServerBootstrap bootstrap; //服务端启动器
 
-    private io.netty.channel.Channel channel;
+    private io.netty.channel.Channel channel; //服务监听端口通道
 
-    private EventLoopGroup bossGroup;
-    private EventLoopGroup workerGroup;
+    private EventLoopGroup bossGroup;  //netty boss 线程组 负责链接事件
+    private EventLoopGroup workerGroup; //netty work 线程组 负责IO事件
 
     /**
      *
@@ -74,9 +74,10 @@ public class NettyServer extends AbstractServer implements Server {
 
     @Override
     protected void doOpen() throws Throwable {
-        bootstrap = new ServerBootstrap();
-
+        bootstrap = new ServerBootstrap(); //创建netty服务启动帮助类
+        //创建服务端Boss线程，线程名：.NettyServerBoss，主要负责客户端的连接事件，主从多Reactor线程模型中的主线程（连接事件）。
         bossGroup = new NioEventLoopGroup(1, new DefaultThreadFactory("NettyServerBoss", true));
+        //创建服务端Work线程组，线程名：NettyServerWorker-序号，线程个数取自参数：iothreads，默认为(CPU核数+1)与32取小值，顾名思义，IO线程数，主要处理读写事件，编码、解码都在IO线程中完成。
         workerGroup = new NioEventLoopGroup(getUrl().getPositiveParameter(Constants.IO_THREADS_KEY, Constants.DEFAULT_IO_THREADS),
                 new DefaultThreadFactory("NettyServerWorker", true));
 
