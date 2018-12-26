@@ -178,7 +178,7 @@ public class ExtensionLoader<T> {
      * @see #getActivateExtension(org.apache.dubbo.common.URL, String[], String)
      */
     public List<T> getActivateExtension(URL url, String key, String group) {
-        String value = url.getParameter(key);
+        String value = url.getParameter(key); //获取到自定义filter
         return getActivateExtension(url, value == null || value.length() == 0 ? null : Constants.COMMA_SPLIT_PATTERN.split(value), group);
     }
 
@@ -194,9 +194,9 @@ public class ExtensionLoader<T> {
     public List<T> getActivateExtension(URL url, String[] values, String group) {
         List<T> exts = new ArrayList<T>();
         List<String> names = values == null ? new ArrayList<String>(0) : Arrays.asList(values);
-        if (!names.contains(Constants.REMOVE_VALUE_PREFIX + Constants.DEFAULT_KEY)) {
+        if (!names.contains(Constants.REMOVE_VALUE_PREFIX + Constants.DEFAULT_KEY)) { //包含default 表示禁用dubbo里的一系列的默认拦截器
             getExtensionClasses();
-            for (Map.Entry<String, Object> entry : cachedActivates.entrySet()) {
+            for (Map.Entry<String, Object> entry : cachedActivates.entrySet()) { //不禁用则加载默认的拦截器
                 String name = entry.getKey();
                 Object activate = entry.getValue();
 
@@ -223,7 +223,7 @@ public class ExtensionLoader<T> {
             Collections.sort(exts, ActivateComparator.COMPARATOR);
         }
         List<T> usrs = new ArrayList<T>();
-        for (int i = 0; i < names.size(); i++) {
+        for (int i = 0; i < names.size(); i++) { //加载自定义拦截器
             String name = names.get(i);
             if (!name.startsWith(Constants.REMOVE_VALUE_PREFIX)
                     && !names.contains(Constants.REMOVE_VALUE_PREFIX + name)) {

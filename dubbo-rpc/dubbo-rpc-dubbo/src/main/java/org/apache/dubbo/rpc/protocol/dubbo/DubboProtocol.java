@@ -80,7 +80,7 @@ public class DubboProtocol extends AbstractProtocol {
         public CompletableFuture<Object> reply(ExchangeChannel channel, Object message) throws RemotingException {
             if (message instanceof Invocation) {
                 Invocation inv = (Invocation) message;
-                Invoker<?> invoker = getInvoker(channel, inv);
+                Invoker<?> invoker = getInvoker(channel, inv); //获取调用者的invoker
                 // need to consider backward-compatibility if it's a callback
                 if (Boolean.TRUE.toString().equals(inv.getAttachments().get(IS_CALLBACK_SERVICE_INVOKE))) {
                     String methodsStr = invoker.getUrl().getParameters().get("methods");
@@ -111,7 +111,7 @@ public class DubboProtocol extends AbstractProtocol {
                     rpcContext.setAsyncContext(new AsyncContextImpl(future));
                 }
                 rpcContext.setRemoteAddress(channel.getRemoteAddress());
-                Result result = invoker.invoke(inv);
+                Result result = invoker.invoke(inv); //返回结果
 
                 if (result instanceof AsyncRpcResult) {
                     return ((AsyncRpcResult) result).getResultFuture().thenApply(r -> (Object) r);
@@ -126,7 +126,7 @@ public class DubboProtocol extends AbstractProtocol {
 
         @Override
         public void received(Channel channel, Object message) throws RemotingException {
-            if (message instanceof Invocation) {
+            if (message instanceof Invocation) { //是否服务调用
                 reply((ExchangeChannel) channel, message);
             } else {
                 super.received(channel, message);
@@ -364,6 +364,8 @@ public class DubboProtocol extends AbstractProtocol {
     private ExchangeClient[] getClients(URL url) {
         // whether to share connection
         boolean service_share_connect = false;
+        //共享客户端，以Netty为例，也即客户端对同一服务提供者发起的不同服务，使用同一个客户端(NettyClient)进行请求的发送与接收。
+        //默认0 ，表示 使用共享客户端，   有设置则为非共享客户端
         int connections = url.getParameter(Constants.CONNECTIONS_KEY, 0);
         // if not configured, connection is shared, otherwise, one connection for one service
         if (connections == 0) {
@@ -374,7 +376,7 @@ public class DubboProtocol extends AbstractProtocol {
         ExchangeClient[] clients = new ExchangeClient[connections];
         for (int i = 0; i < clients.length; i++) {
             if (service_share_connect) {
-                clients[i] = getSharedClient(url);
+                clients[i] = getSharedClient(url); //获取共享客户端
             } else {
                 clients[i] = initClient(url);
             }

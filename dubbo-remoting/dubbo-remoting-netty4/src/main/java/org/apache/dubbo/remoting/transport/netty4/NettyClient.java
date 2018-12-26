@@ -92,9 +92,9 @@ public class NettyClient extends AbstractClient {
     @Override
     protected void doConnect() throws Throwable {
         long start = System.currentTimeMillis();
-        ChannelFuture future = bootstrap.connect(getConnectAddress());
+        ChannelFuture future = bootstrap.connect(getConnectAddress()); //发起tcp连接
         try {
-            boolean ret = future.awaitUninterruptibly(3000, TimeUnit.MILLISECONDS);
+            boolean ret = future.awaitUninterruptibly(3000, TimeUnit.MILLISECONDS); //链接事件只等待3秒钟
 
             if (ret && future.isSuccess()) {
                 Channel newChannel = future.channel();

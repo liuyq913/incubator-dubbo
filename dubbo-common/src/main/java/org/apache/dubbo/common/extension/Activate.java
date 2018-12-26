@@ -46,7 +46,7 @@ public @interface Activate {
     /**
      * Activate the current extension when one of the groups matches. The group passed into
      * {@link ExtensionLoader#getActivateExtension(URL, String, String)} will be used for matching.
-     *
+     *  所属组，String[],例如消费端、服务端。
      * @return group names to match
      * @see ExtensionLoader#getActivateExtension(URL, String, String)
      */
@@ -58,6 +58,7 @@ public @interface Activate {
      * For example, given <code>@Activate("cache, validation")</code>, the current extension will be return only when
      * there's either <code>cache</code> or <code>validation</code> key appeared in the URL's parameters.
      * </p>
+     *如果指定该值，只有当消费者或服务提供者URL中包含属性名为value的键值对，该过滤器才处于激活状态。
      *
      * @return URL parameter keys
      * @see ExtensionLoader#getActivateExtension(URL, String)
@@ -68,7 +69,7 @@ public @interface Activate {
     /**
      * Relative ordering info, optional
      * Deprecated since 2.7.0
-     *
+     *用于指定执行顺序，before指定的过滤器在该过滤器之前执行
      * @return extension list which should be put before the current one
      */
     @Deprecated
@@ -77,13 +78,14 @@ public @interface Activate {
     /**
      * Relative ordering info, optional
      * Deprecated since 2.7.0
-     *
+     *用于指定执行顺序，before指定的过滤器在该过滤器之前执行
      * @return extension list which should be put after the current one
      */
     @Deprecated
     String[] after() default {};
 
     /**
+     * 用户指定顺序，值越小，越先执行
      * Absolute ordering info, optional
      *
      * @return absolute ordering info

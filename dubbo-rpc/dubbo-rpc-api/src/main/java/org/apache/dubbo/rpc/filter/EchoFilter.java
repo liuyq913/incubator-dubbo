@@ -28,7 +28,7 @@ import org.apache.dubbo.rpc.RpcResult;
 /**
  * EchoInvokerFilter
  */
-@Activate(group = Constants.PROVIDER, order = -110000)
+@Activate(group = Constants.PROVIDER, order = -110000) //grop 属于消费端，还是服务端
 public class EchoFilter implements Filter {
 
     @Override
