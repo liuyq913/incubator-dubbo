@@ -28,7 +28,7 @@ import org.apache.dubbo.rpc.RpcException;
 import org.apache.dubbo.rpc.RpcInvocation;
 
 /**
- * ConsumerContextInvokerFilter
+ * ConsumerContextInvokerFilter  实现上下文替换
  */
 @Activate(group = Constants.CONSUMER, order = -10000)
 public class ConsumerContextFilter extends AbstractPostProcessFilter {

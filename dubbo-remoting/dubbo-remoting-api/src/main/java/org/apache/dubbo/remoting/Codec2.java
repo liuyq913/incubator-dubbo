@@ -26,14 +26,16 @@ import java.io.IOException;
 @SPI
 public interface Codec2 {
 
-    @Adaptive({Constants.CODEC_KEY})
+    @Adaptive({Constants.CODEC_KEY}) //客户端发送下消息的时候，需要将请求对象按照一定的格式将对象编程成二进制流，以便于接受的时候可以解析成一个完整的信息
     void encode(Channel channel, ChannelBuffer buffer, Object message) throws IOException;
 
-    @Adaptive({Constants.CODEC_KEY})
+    @Adaptive({Constants.CODEC_KEY}) //从二进制流里面解码出请求信息
     Object decode(Channel channel, ChannelBuffer buffer) throws IOException;
 
 
     enum DecodeResult {
+        //NEED_MORE_INPUT:在解码过程中如果收到的字节流不是一个完整包时，结束此次读事件处理，等待更多数据到达
+        //SKIP_SOME_INPUT：忽略掉一部分输入数据
         NEED_MORE_INPUT, SKIP_SOME_INPUT
     }
 

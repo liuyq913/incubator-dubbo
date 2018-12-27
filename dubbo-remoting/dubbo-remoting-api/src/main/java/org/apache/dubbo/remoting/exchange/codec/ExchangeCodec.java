@@ -52,20 +52,26 @@ public class ExchangeCodec extends TelnetCodec {
     // header length.
     protected static final int HEADER_LENGTH = 16;
     // magic header.
-    protected static final short MAGIC = (short) 0xdabb;
-    protected static final byte MAGIC_HIGH = Bytes.short2bytes(MAGIC)[0];
-    protected static final byte MAGIC_LOW = Bytes.short2bytes(MAGIC)[1];
+    protected static final short MAGIC = (short) 0xdabb;   //魔数，固定为0xdabb，2个字节。  二进制 ：1101101010111011
+    protected static final byte MAGIC_HIGH = Bytes.short2bytes(MAGIC)[0]; //魔数高8位
+    protected static final byte MAGIC_LOW = Bytes.short2bytes(MAGIC)[1]; //魔数低8位
     // message flag.
-    protected static final byte FLAG_REQUEST = (byte) 0x80;
-    protected static final byte FLAG_TWOWAY = (byte) 0x40;
-    protected static final byte FLAG_EVENT = (byte) 0x20;
-    protected static final int SERIALIZATION_MASK = 0x1f;
+    protected static final byte FLAG_REQUEST = (byte) 0x80; //消息请求类型为消息请求
+    protected static final byte FLAG_TWOWAY = (byte) 0x40;  //消息请求类型为心跳
+    protected static final byte FLAG_EVENT = (byte) 0x20;  //消息请求类型为事件
+    protected static final int SERIALIZATION_MASK = 0x1f;  //serialization掩码
     private static final Logger logger = LoggerFactory.getLogger(ExchangeCodec.class);
 
     public Short getMagicCode() {
         return MAGIC;
     }
 
+    /**
+     * 参数说明：Channel channel：Dubbo网络通道的抽象，底层实现有NettyChannel、MinaChannel；
+     * ChannelBuffer buffer：buffer抽象类，屏蔽netty,mina等底层实现差别；
+     * Object msg：请求对象、响应对象或其他消息对象。
+     * @throws IOException
+     */
     @Override
     public void encode(Channel channel, ChannelBuffer buffer, Object msg) throws IOException {
         if (msg instanceof Request) {
@@ -209,14 +215,32 @@ public class ExchangeCodec extends TelnetCodec {
     }
 
     protected void encodeRequest(Channel channel, ChannelBuffer buffer, Request req) throws IOException {
-        Serialization serialization = getSerialization(channel);
+        Serialization serialization = getSerialization(channel); //获取序列号实现类
         // header.
         byte[] header = new byte[HEADER_LENGTH];
         // set magic number.
-        Bytes.short2bytes(MAGIC, header);
+        Bytes.short2bytes(MAGIC, header); //设置了hearder的第一位和第二位
 
         // set request and serialization flag.
-        header[2] = (byte) (FLAG_REQUEST | serialization.getContentTypeId());
+        //按位或
+        /** serialization.getContentTypeId()
+         * 返回CompactedJavaSerialization ： 4 二进制为0000 0010
+               FastJsonSerialization : 6 二进制为0000 0110
+               FstSerialization : 9 二进制为0000 1001
+               Hessian2Serialization : 2 二进制为0000 0010
+               JavaSerialization : 3 二进制为0000 0011
+               KryoSerialization : 8 二进制为0000 1000
+               NativeJavaSerialization ： 7 二进制为0000 0111
+
+         *1000 0000 | 0000 0010  -->1000 0010
+         * 1000 0000 | 0000 0110 -->1000 0110
+         * 1000 0000 | 0000 1001 -->1000 1001
+         * 1000 0000 | 0000 0010 -->1000 0010
+         * 1000 0000 | 0000 0011 -->1000 0011
+         * 1000 0000 |0000 1000  -->1000 1000
+         * 1000 0000 |0000 0111  -->1000 0111    前4位为消息请求类型，后四位为序列化器类别
+         */
+        header[2] = (byte) (FLAG_REQUEST | serialization.getContentTypeId()); //头部的第3个字节存储的是消息请求标识与序列化器类别
 
         if (req.isTwoWay()) header[2] |= FLAG_TWOWAY;
         if (req.isEvent()) header[2] |= FLAG_EVENT;
@@ -450,6 +474,5 @@ public class ExchangeCodec extends TelnetCodec {
     protected void encodeResponseData(Channel channel, ObjectOutput out, Object data, String version) throws IOException {
         encodeResponseData(out, data);
     }
-
 
 }

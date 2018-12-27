@@ -552,7 +552,7 @@ public class ExtensionLoader<T> {
                             String property = method.getName().length() > 3 ? method.getName().substring(3, 4).toLowerCase() + method.getName().substring(4) : "";
                             //根据类型和名称信息从ExtensionFactory中获取
                             //比如在某个扩展实现类中会有setProtocol(Protocol protocol)这样的set方法
-                            //这里pt就是Protocol，property就是protocol
+                            //这里pt就是Protocol.class，property就是protocol
                             //AdaptiveExtensionFactory就会根据这两个参数去查找对应的扩展实现类
                             //这里就会返回Protocol$Adaptive
                             Object object = objectFactory.getExtension(pt, property);
@@ -700,7 +700,7 @@ public class ExtensionLoader<T> {
                         + cachedAdaptiveClass.getClass().getName()
                         + ", " + clazz.getClass().getName());
             }
-        } else if (isWrapperClass(clazz)) {
+        } else if (isWrapperClass(clazz)) { //加载wapper
             Set<Class<?>> wrappers = cachedWrapperClasses;
             if (wrappers == null) {
                 cachedWrapperClasses = new ConcurrentHashSet<Class<?>>();

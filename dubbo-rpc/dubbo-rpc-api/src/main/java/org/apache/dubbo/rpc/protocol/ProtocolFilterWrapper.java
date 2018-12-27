@@ -36,6 +36,7 @@ public class ProtocolFilterWrapper implements Protocol {
 
     private final Protocol protocol;
 
+    //典型的装配模式
     public ProtocolFilterWrapper(Protocol protocol) {
         if (protocol == null) {
             throw new IllegalArgumentException("protocol == null");
