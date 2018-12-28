@@ -56,9 +56,9 @@ public class ExchangeCodec extends TelnetCodec {
     protected static final byte MAGIC_HIGH = Bytes.short2bytes(MAGIC)[0]; //魔数高8位
     protected static final byte MAGIC_LOW = Bytes.short2bytes(MAGIC)[1]; //魔数低8位
     // message flag.
-    protected static final byte FLAG_REQUEST = (byte) 0x80; //消息请求类型为消息请求
-    protected static final byte FLAG_TWOWAY = (byte) 0x40;  //消息请求类型为心跳
-    protected static final byte FLAG_EVENT = (byte) 0x20;  //消息请求类型为事件
+    protected static final byte FLAG_REQUEST = (byte) 0x80; //消息请求类型为消息请求 1000
+    protected static final byte FLAG_TWOWAY = (byte) 0x40;  //消息请求类型为心跳 0100
+    protected static final byte FLAG_EVENT = (byte) 0x20;  //消息请求类型为事件  0010
     protected static final int SERIALIZATION_MASK = 0x1f;  //serialization掩码
     private static final Logger logger = LoggerFactory.getLogger(ExchangeCodec.class);
 
@@ -246,13 +246,13 @@ public class ExchangeCodec extends TelnetCodec {
         if (req.isEvent()) header[2] |= FLAG_EVENT;
 
         // set request id.
-        Bytes.long2bytes(req.getId(), header, 4);
+        Bytes.long2bytes(req.getId(), header, 4); //设置请求头的4-11位
 
-        // encode request data.
+        // encode request data.  编码请求体
         int savedWriteIndex = buffer.writerIndex();
         buffer.writerIndex(savedWriteIndex + HEADER_LENGTH);
         ChannelBufferOutputStream bos = new ChannelBufferOutputStream(buffer);
-        ObjectOutput out = serialization.serialize(channel.getUrl(), bos);
+        ObjectOutput out = serialization.serialize(channel.getUrl(), bos); //根据序列化器，将通道的URL进行序列化，变存入buffer中。
         if (req.isEvent()) {
             encodeEventData(channel, out, req.getData());
         } else {
@@ -265,8 +265,8 @@ public class ExchangeCodec extends TelnetCodec {
         bos.flush();
         bos.close();
         int len = bos.writtenBytes();
-        checkPayload(channel, len);
-        Bytes.int2bytes(len, header, 12);
+        checkPayload(channel, len); //请求长度，header+body
+        Bytes.int2bytes(len, header, 12); //将长度写在header的12-15中
 
         // write
         buffer.writerIndex(savedWriteIndex);
